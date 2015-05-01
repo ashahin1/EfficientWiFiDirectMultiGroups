@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Efficient WiFi Direct Multi-Groups</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="checkBatteryStatus">Check Battery Status</string>
+    <string name="action_toggle_wifi">Toggle Wi-Fi</string>
+    <string name="action_clear_log">Clear Log</string>
+</resources>
