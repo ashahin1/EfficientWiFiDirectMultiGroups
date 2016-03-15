@@ -57,6 +57,9 @@ public class DiscoveryPeersInfo {
         if (record.containsKey(EfficientWiFiP2pGroupsActivity.RECORD_CHARGING)) {
             peerInfo.batteryIsCharging = Boolean.valueOf(record.get(EfficientWiFiP2pGroupsActivity.RECORD_CHARGING));
         }
+        if (record.containsKey(EfficientWiFiP2pGroupsActivity.RECORD_PROPOSED_IP)) {
+            peerInfo.proposedIP = Integer.valueOf(record.get(EfficientWiFiP2pGroupsActivity.RECORD_PROPOSED_IP));
+        }
         if (record.containsKey(EfficientWiFiP2pGroupsActivity.RECORD_SSID)) {
             if (peerInfo.legacySSID.equals(record.get(EfficientWiFiP2pGroupsActivity.RECORD_SSID)))
                 cond1 = true;
@@ -171,7 +174,7 @@ public class DiscoveryPeersInfo {
         BatteryInformation batteryInfo = new BatteryInformation();
         batteryInfo.getBatteryStats(context);
 
-        DiscoveryPeerInfo myInfo = new DiscoveryPeerInfo("", batteryInfo.level, batteryInfo.capacity, batteryInfo.isCharging);
+        DiscoveryPeerInfo myInfo = new DiscoveryPeerInfo("", batteryInfo.level, batteryInfo.capacity, batteryInfo.isCharging, -1);
 
         float bestRank = -1.0f;
         for (DiscoveryPeerInfo peerInfo : peersInfo) {

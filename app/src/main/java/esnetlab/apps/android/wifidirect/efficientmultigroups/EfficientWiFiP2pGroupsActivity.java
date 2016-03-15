@@ -77,13 +77,14 @@ public class EfficientWiFiP2pGroupsActivity extends ActionBarActivity implements
     public static final int PROXY_DATA_PORT = 4543;
 
     public static final String RECORD_TYPE = "type";
-    public static final String RECORD_TYPE_BATTERY_INFO = "0";
+    public static final String RECORD_TYPE_DEVICE_INFO = "0";
     public static final String RECORD_TYPE_LEGACY_AP = "1";
     public static final String RECORD_LEVEL = "level";
     public static final String RECORD_CAPACITY = "capacity";
     public static final String RECORD_CHARGING = "charging";
     public static final String RECORD_SSID = "ssid";
     public static final String RECORD_KEY = "key";
+    public static final String RECORD_PROPOSED_IP = "proposed_ip";
 
     public static final String PASSWORD = "AllahAkbarAllahA";
     public static final int SEND_MY_INF_PERIOD = 2000;
@@ -149,7 +150,7 @@ public class EfficientWiFiP2pGroupsActivity extends ActionBarActivity implements
         }
     };
     private WifiP2pDnsSdServiceRequest serviceRequest;
-    private WifiP2pDnsSdServiceInfo serviceInfoBattery;
+    private WifiP2pDnsSdServiceInfo serviceDeviceInfo;
     private WifiP2pDnsSdServiceInfo serviceInfoLegacyAp;
     private Handler handler = new Handler(this);
     private SocketPeer proxySocketPeer = new SocketPeer();
@@ -313,9 +314,9 @@ public class EfficientWiFiP2pGroupsActivity extends ActionBarActivity implements
         btnCreateService.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                removeBatteryInfoService();
+                removeDeviceInfoService();
                 sleep(1000);
-                createBatteryInfoService();
+                createDeviceInfoService();
             }
         });
 
@@ -740,6 +741,9 @@ public class EfficientWiFiP2pGroupsActivity extends ActionBarActivity implements
         if (record.containsKey(RECORD_CHARGING)) {
             encryptDecryptRecordElement(record, encrypt, RECORD_CHARGING);
         }
+        if (record.containsKey(RECORD_PROPOSED_IP)) {
+            encryptDecryptRecordElement(record, encrypt, RECORD_PROPOSED_IP);
+        }
         if (record.containsKey(RECORD_SSID)) {
             encryptDecryptRecordElement(record, encrypt, RECORD_SSID);
         }
@@ -795,43 +799,44 @@ public class EfficientWiFiP2pGroupsActivity extends ActionBarActivity implements
         }
     }
 
-    private synchronized void createBatteryInfoService() {
+    private synchronized void createDeviceInfoService() {
         batteryInfo = batteryInfo.getBatteryStats(getApplicationContext());
         Map<String, String> record = new HashMap<>();
 
         //Declare the type as "0" which means a Batteryinfo service record
-        record.put(RECORD_TYPE, RECORD_TYPE_BATTERY_INFO);
+        record.put(RECORD_TYPE, RECORD_TYPE_DEVICE_INFO);
         record.put(RECORD_LEVEL, Integer.toString(batteryInfo.level));
         record.put(RECORD_CAPACITY, Integer.toString(batteryInfo.capacity));
         record.put(RECORD_CHARGING, Boolean.toString(batteryInfo.isCharging));
+        record.put(RECORD_PROPOSED_IP, Integer.toString(DiscoveryPeerInfo.generateProposedIP()));
 
-        serviceInfoBattery =
+        serviceDeviceInfo =
                 WifiP2pDnsSdServiceInfo.newInstance(SERVICE_INSTANCE, SERVICE_REG_TYPE, record);
-        wifiP2pManager.addLocalService(wifiP2pChannel, serviceInfoBattery, new WifiP2pManager.ActionListener() {
+        wifiP2pManager.addLocalService(wifiP2pChannel, serviceDeviceInfo, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-                appendLogUiThread("Service BatteryInfo added successfully", true);
+                appendLogUiThread("Service DeviceInfo added successfully", true);
             }
 
             @Override
             public void onFailure(int arg0) {
-                appendLogUiThread("Service BatteryInfo failed to add");
+                appendLogUiThread("Service DeviceInfo failed to add");
             }
         });
     }
 
-    private void removeBatteryInfoService() {
-        if (serviceInfoBattery != null)
-            wifiP2pManager.removeLocalService(wifiP2pChannel, serviceInfoBattery, new WifiP2pManager.ActionListener() {
+    private void removeDeviceInfoService() {
+        if (serviceDeviceInfo != null)
+            wifiP2pManager.removeLocalService(wifiP2pChannel, serviceDeviceInfo, new WifiP2pManager.ActionListener() {
                 @Override
                 public void onSuccess() {
-                    appendLogUiThread("Remove BatteryInfo local service succeeded");
-                    serviceInfoBattery = null;
+                    appendLogUiThread("Remove DeviceInfo local service succeeded");
+                    serviceDeviceInfo = null;
                 }
 
                 @Override
                 public void onFailure(int reason) {
-                    appendLogUiThread("Remove BatteryInfo local service failed");
+                    appendLogUiThread("Remove DeviceInfo local service failed");
                 }
             });
     }
@@ -1415,7 +1420,7 @@ public class EfficientWiFiP2pGroupsActivity extends ActionBarActivity implements
             thisDeviceState = ThisDeviceState.COLLECTING_BATTERY_INFO;
 
             startTimers();
-            createBatteryInfoService();
+            createDeviceInfoService();
         }
     }
 
@@ -1745,7 +1750,7 @@ public class EfficientWiFiP2pGroupsActivity extends ActionBarActivity implements
             if (thisDeviceState == ThisDeviceState.COLLECTING_BATTERY_INFO
                     || thisDeviceState == ThisDeviceState.GO_SENDING_LEGACY_INFO
                     || thisDeviceState == ThisDeviceState.GO_ACCEPTING_CONNECTIONS) {
-                createBatteryInfoService();
+                createDeviceInfoService();
             }
 
             if (thisDeviceState == ThisDeviceState.GO_SENDING_LEGACY_INFO
