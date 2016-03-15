@@ -1424,7 +1424,6 @@ public class EfficientWiFiP2pGroupsActivity extends ActionBarActivity implements
         }
     }
 
-
     public synchronized void startTimers() {
         try {
             sendMyInfoTimer = new Timer("sendMyInfoTimer");
