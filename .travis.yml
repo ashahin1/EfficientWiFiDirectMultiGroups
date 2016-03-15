@@ -13,14 +13,14 @@ android:
     - android-23
 
     # Additional components
-    - extra-google-google_play_services
+    #- extra-google-google_play_services
     - extra-google-m2repository
     - extra-android-m2repository
-    - addon-google_apis-google-19
+    #- addon-google_apis-google-19
 
     # Specify at least one system image,
     # if you need to run emulator(s) during your tests
-    - sys-img-armeabi-v7a-android-21
-    - sys-img-x86-android-17
+    # - sys-img-armeabi-v7a-android-21
+    # - sys-img-x86-android-17
   before_install:
     - chmod +x gradlew
