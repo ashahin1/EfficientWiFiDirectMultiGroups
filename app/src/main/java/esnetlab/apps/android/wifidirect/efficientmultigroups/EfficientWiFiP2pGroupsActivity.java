@@ -96,6 +96,7 @@ public class EfficientWiFiP2pGroupsActivity extends ActionBarActivity implements
     private static final int DECIDE_PROXY_PERIOD = 40000;
     private static final int SEND_TEAR_DOWN_PERIOD = 300000;
     private static final int SEND_NEARBY_LEGACY_APS_INFO_PERIOD = 3000;
+
     public static WifiP2pInfo p2pInfo = null;
     public static WifiP2pGroup p2pGroup = null;
     public static WifiP2pDevice p2pDevice = null;
@@ -114,6 +115,12 @@ public class EfficientWiFiP2pGroupsActivity extends ActionBarActivity implements
     private final Handler tearDownHandler = new Handler();
     private final Handler declareGoAcceptingGMsHandler = new Handler();
     private final Handler sendNearbyLegacyApsInfoHandler = new Handler();
+    private final Runnable sendTearDownRunnable = new Runnable() {
+        @Override
+        public void run() {
+            sendTearDownToMembers();
+        }
+    };
     public ThisDeviceState thisDeviceState = ThisDeviceState.STARTED;
     private final Runnable declareGoAcceptingGMsRunnable = new Runnable() {
         @Override
@@ -121,6 +128,7 @@ public class EfficientWiFiP2pGroupsActivity extends ActionBarActivity implements
             declareGoAcceptingGMs();
         }
     };
+    public int myProposedIP = DiscoveryPeerInfo.generateProposedIP();
     TextView txtLog;
     private final Runnable decideProxyRunnable = new Runnable() {
         @Override
@@ -149,23 +157,17 @@ public class EfficientWiFiP2pGroupsActivity extends ActionBarActivity implements
             sendNearbyLegacyApsInfo();
         }
     };
-    private WifiP2pDnsSdServiceRequest serviceRequest;
-    private WifiP2pDnsSdServiceInfo serviceDeviceInfo;
-    private WifiP2pDnsSdServiceInfo serviceInfoLegacyAp;
-    private Handler handler = new Handler(this);
-    private SocketPeer proxySocketPeer = new SocketPeer();
-    private final Runnable decideGroupRunnable = new Runnable() {
-        @Override
-        public void run() {
-            decideGroupAndConnect();
-        }
-    };
     private final Runnable declareGoRunnable = new Runnable() {
         @Override
         public void run() {
             declareGo();
         }
     };
+    private WifiP2pDnsSdServiceRequest serviceRequest;
+    private WifiP2pDnsSdServiceInfo serviceDeviceInfo;
+    private WifiP2pDnsSdServiceInfo serviceInfoLegacyAp;
+    private Handler handler = new Handler(this);
+    private SocketPeer proxySocketPeer = new SocketPeer();
     private boolean lastWifiState = false;
     //private SendMyInfoTask sendMyInfoTask = new SendMyInfoTask();
     private Timer sendMyInfoTimer = new Timer("sendMyInfoTimer");
@@ -181,10 +183,10 @@ public class EfficientWiFiP2pGroupsActivity extends ActionBarActivity implements
             tearDownGroupAndReRun();
         }
     };
-    private final Runnable sendTearDownRunnable = new Runnable() {
+    private final Runnable decideGroupRunnable = new Runnable() {
         @Override
         public void run() {
-            sendTearDownToMembers();
+            decideGroupAndConnect();
         }
     };
 
@@ -808,7 +810,7 @@ public class EfficientWiFiP2pGroupsActivity extends ActionBarActivity implements
         record.put(RECORD_LEVEL, Integer.toString(batteryInfo.level));
         record.put(RECORD_CAPACITY, Integer.toString(batteryInfo.capacity));
         record.put(RECORD_CHARGING, Boolean.toString(batteryInfo.isCharging));
-        record.put(RECORD_PROPOSED_IP, Integer.toString(DiscoveryPeerInfo.generateProposedIP()));
+        record.put(RECORD_PROPOSED_IP, Integer.toString(myProposedIP));
 
         serviceDeviceInfo =
                 WifiP2pDnsSdServiceInfo.newInstance(SERVICE_INSTANCE, SERVICE_REG_TYPE, record);
@@ -1359,6 +1361,8 @@ public class EfficientWiFiP2pGroupsActivity extends ActionBarActivity implements
         clearAllLocalServices();
         clearAllServiceRequests();
         resetP2pStructures();
+
+        myProposedIP = DiscoveryPeerInfo.generateProposedIP();
 
         groupSocketPeers.removeAllSocketManagers();
         groupSocketPeers.clear();
