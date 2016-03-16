@@ -24,6 +24,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
@@ -55,7 +56,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 
-public class EfficientWiFiP2pGroupsActivity extends ActionBarActivity implements WifiP2pManager.ConnectionInfoListener, Handler.Callback, MessageTarget {
+public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements WifiP2pManager.ConnectionInfoListener, Handler.Callback, MessageTarget {
 
     public static final String TAG = "EfficientWiFiP2pGroups";
 
