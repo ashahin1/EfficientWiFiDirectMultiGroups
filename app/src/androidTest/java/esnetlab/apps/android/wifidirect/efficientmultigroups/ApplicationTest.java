@@ -11,9 +11,9 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
     public ApplicationTest() {
         super(Application.class);
 
-        MessageTypeData ms = MessageHelper.getMessageTypeAndData("ahmed"+MessageHelper.MESSAGE_TYPE_DATA_SEPARATOR+"AMER");
-        if(ms != null){
-            System.out.print(ms.messageData);
-        }else System.out.print("Failed");
+//        MessageTypeData ms = MessageHelper.getMessageTypeAndData("ahmed"+MessageHelper.MESSAGE_TYPE_DATA_SEPARATOR+"AMER");
+//        if(ms != null){
+//            System.out.print(ms.messageData);
+//        }else System.out.print("Failed");
     }
 }
