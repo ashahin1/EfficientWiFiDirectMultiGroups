@@ -77,15 +77,15 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     public static final int PROXY_MGMNT_PORT = 4544;
     public static final int PROXY_DATA_PORT = 4543;
 
-    public static final String RECORD_TYPE = "type";
+    public static final String RECORD_TYPE = "tp";
     public static final String RECORD_TYPE_DEVICE_INFO = "0";
     public static final String RECORD_TYPE_LEGACY_AP = "1";
-    public static final String RECORD_LEVEL = "level";
-    public static final String RECORD_CAPACITY = "capacity";
-    public static final String RECORD_CHARGING = "charging";
+    public static final String RECORD_LEVEL = "lvl";
+    public static final String RECORD_CAPACITY = "cap";
+    public static final String RECORD_CHARGING = "chrg";
     public static final String RECORD_SSID = "ssid";
     public static final String RECORD_KEY = "key";
-    public static final String RECORD_PROPOSED_IP = "proposed_ip";
+    public static final String RECORD_PROPOSED_IP = "pIP";
 
     public static final String PASSWORD = "AllahAkbarAllahA";
     public static final int SEND_MY_INF_PERIOD = 2000;
@@ -278,60 +278,70 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         });
 
         final Button btnSend = (Button) findViewById(R.id.btn_send);
-        btnSend.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String dataToSend = txtSend.getText().toString();
-                if (!dataToSend.equals("")) {
-                    groupSocketPeers.sendToAllDataSockets(dataToSend, MessageType.DATA_GM_TO_GROUP);
-                    forwardIfMeIsProxy(dataToSend);
-                    txtReceived.append("Data msg Sent -> [ME]: " + dataToSend + "\n");
-                    txtSend.setText("");
-                    txtSend.clearFocus();
+        if (btnSend != null) {
+            btnSend.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    String dataToSend = txtSend.getText().toString();
+                    if (!dataToSend.equals("")) {
+                        groupSocketPeers.sendToAllDataSockets(dataToSend, MessageType.DATA_GM_TO_GROUP);
+                        forwardIfMeIsProxy(dataToSend);
+                        txtReceived.append("Data msg Sent -> [ME]: " + dataToSend + "\n");
+                        txtSend.setText("");
+                        txtSend.clearFocus();
+                    }
                 }
-            }
-        });
+            });
+        }
 
         final Button btnCreateGroup = (Button) findViewById(R.id.btn_create_group);
-        btnCreateGroup.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (checkGroupFormedByMe()) {
-                    removeWiFiP2pGroup(true);
-                    btnCreateGroup.setText("Create\nGroup");
-                } else {
-                    createWifiP2pGroup();
-                    btnCreateGroup.setText("Remove\nGroup");
+        if (btnCreateGroup != null) {
+            btnCreateGroup.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (checkGroupFormedByMe()) {
+                        removeWiFiP2pGroup(true);
+                        btnCreateGroup.setText("Create\nGroup");
+                    } else {
+                        createWifiP2pGroup();
+                        btnCreateGroup.setText("Remove\nGroup");
+                    }
                 }
-            }
-        });
+            });
+        }
         final Button btnDiscoverPeers = (Button) findViewById(R.id.btn_discover_peers);
-        btnDiscoverPeers.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //discoverPeers();
-            }
-        });
+        if (btnDiscoverPeers != null) {
+            btnDiscoverPeers.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    //discoverPeers();
+                }
+            });
+        }
 
         final Button btnCreateService = (Button) findViewById(R.id.btn_create_service);
-        btnCreateService.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                removeDeviceInfoService();
-                sleep(1000);
-                createDeviceInfoService();
-            }
-        });
+        if (btnCreateService != null) {
+            btnCreateService.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    removeDeviceInfoService();
+                    sleep(1000);
+                    createDeviceInfoService();
+                }
+            });
+        }
 
         final Button btnListServices = (Button) findViewById(R.id.btn_list_services);
-        btnListServices.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                stopDiscoveringServices();
-                sleep(1000);
-                discoverServices();
-            }
-        });
+        if (btnListServices != null) {
+            btnListServices.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    stopDiscoveringServices();
+                    sleep(1000);
+                    discoverServices();
+                }
+            });
+        }
 
     }
 
@@ -806,7 +816,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         batteryInfo = batteryInfo.getBatteryStats(getApplicationContext());
         Map<String, String> record = new HashMap<>();
 
-        //Declare the type as "0" which means a Batteryinfo service record
+        //Declare the type as "0" which means a DeviceInfo service record
         record.put(RECORD_TYPE, RECORD_TYPE_DEVICE_INFO);
         record.put(RECORD_LEVEL, Integer.toString(batteryInfo.level));
         record.put(RECORD_CAPACITY, Integer.toString(batteryInfo.capacity));

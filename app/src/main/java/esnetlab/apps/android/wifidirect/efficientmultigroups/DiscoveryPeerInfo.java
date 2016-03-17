@@ -111,7 +111,7 @@ public class DiscoveryPeerInfo {
         int pIP = -1;
 
         //Generate a random integer and shift it bt 49, which is the starting IP range for Wi-Fi Direct
-        pIP = new Random().nextInt(200) + 49;
+        pIP = new Random().nextInt(20) + 49;
 
         return pIP;
     }
