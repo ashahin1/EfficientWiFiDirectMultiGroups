@@ -75,12 +75,21 @@ public class DiscoveryPeerInfo {
         return discoveryPeerInfo;
     }
 
+    static public int generateProposedIP() {
+        int pIP = -1;
+
+        //Generate a random integer and shift it bt 49, which is the starting IP range for Wi-Fi Direct
+        pIP = new Random().nextInt(20) + 49;
+
+        return pIP;
+    }
+
     private void updatePeerInfo(String deviceId, int batteryLevel, int batteryCapacity, boolean batteryIsCharging, int proposedIP, String legacySSID, String legacyKey) {
         this.deviceId = deviceId;
         this.batteryCapacity = batteryCapacity;
         this.batteryLevel = batteryLevel;
         this.batteryIsCharging = batteryIsCharging;
-        this.proposedIP = proposedIP == -1 ? generateProposedIP() : proposedIP;
+        this.proposedIP = proposedIP;// == -1 ? generateProposedIP() : proposedIP;
         this.legacySSID = legacySSID;
         this.legacyKey = legacyKey;
     }
@@ -105,15 +114,6 @@ public class DiscoveryPeerInfo {
         rank += (batteryCapacity / 4000.0) * 0.33f;
 
         return rank + new Random().nextFloat();
-    }
-
-    static public int generateProposedIP() {
-        int pIP = -1;
-
-        //Generate a random integer and shift it bt 49, which is the starting IP range for Wi-Fi Direct
-        pIP = new Random().nextInt(20) + 49;
-
-        return pIP;
     }
 
     @Override

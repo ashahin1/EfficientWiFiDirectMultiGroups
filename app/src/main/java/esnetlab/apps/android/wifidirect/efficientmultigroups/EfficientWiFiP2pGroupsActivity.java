@@ -23,7 +23,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
@@ -37,9 +36,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -58,8 +54,8 @@ import java.util.TimerTask;
 
 public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements WifiP2pManager.ConnectionInfoListener, Handler.Callback, MessageTarget {
 
-    public static final String TAG = "EfficientWiFiP2pGroups";
 
+    public static final String TAG = "EfficientWiFiP2pGroups";
     public static final String SERVICE_INSTANCE = "_wifip2p_efficient";
     public static final String SERVICE_REG_TYPE = "_presence._tcp";
     public static final int DATA_MESSAGE_READ = 0x400 + 1;
@@ -71,12 +67,10 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     public static final int PROXY_DATA_SOCKET_HANDLE = 0x400 + 7;
     public static final int PROXY_MGMNT_MESSAGE_READ = 0x400 + 8;
     public static final int PROXY_MGMNT_SOCKET_HANDLE = 0x400 + 9;
-
     public static final int MGMNT_PORT = 4546;
     public static final int DATA_PORT = 4545;
     public static final int PROXY_MGMNT_PORT = 4544;
     public static final int PROXY_DATA_PORT = 4543;
-
     public static final String RECORD_TYPE = "tp";
     public static final String RECORD_TYPE_DEVICE_INFO = "0";
     public static final String RECORD_TYPE_LEGACY_AP = "1";
@@ -86,7 +80,6 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     public static final String RECORD_SSID = "ssid";
     public static final String RECORD_KEY = "key";
     public static final String RECORD_PROPOSED_IP = "pIP";
-
     public static final String PASSWORD = "AllahAkbarAllahA";
     public static final int SEND_MY_INF_PERIOD = 2000;
     public static final int SEND_PEERS_INFO_PERIOD = 4000;
@@ -97,7 +90,6 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     private static final int DECIDE_PROXY_PERIOD = 40000;
     private static final int SEND_TEAR_DOWN_PERIOD = 300000;
     private static final int SEND_NEARBY_LEGACY_APS_INFO_PERIOD = 3000;
-
     public static WifiP2pInfo p2pInfo = null;
     public static WifiP2pGroup p2pGroup = null;
     public static WifiP2pDevice p2pDevice = null;
@@ -241,30 +233,14 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        //Force always on screen.
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
         thisDeviceState = ThisDeviceState.STARTED;
+        setupNetworking();
+        setupControls();
+    }
 
-        wifiIntentFilter.addAction(WifiManager.NETWORK_IDS_CHANGED_ACTION);
-        wifiIntentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
-        wifiIntentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
-        wifiIntentFilter.addAction(WifiManager.SUPPLICANT_CONNECTION_CHANGE_ACTION);
-        wifiIntentFilter.addAction(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
-        wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-
-        wifiP2pIntentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);//  Indicates a change in the Wi-Fi P2P status.
-        wifiP2pIntentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION); // Indicates a change in the list of available peers.
-        wifiP2pIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);// Indicates the state of Wi-Fi P2P connectivity has changed.
-        wifiP2pIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);// Indicates this device's details have changed.
-        wifiP2pIntentFilter.addAction(WifiP2pManager.WIFI_P2P_DISCOVERY_CHANGED_ACTION);//Indicates that peer discovery has either started or stopped.
-        wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
-        wifiP2pChannel = wifiP2pManager.initialize(this, getMainLooper(), null);
-
-        //Enable WiFi
-        wifiManager.setWifiEnabled(true);
-        //Clean the WiFi configured networks
-        removeConfiguredLegacyAPs("++++++++++++");
-
+    private void setupControls() {
         txtLog = (TextView) findViewById(R.id.txt_log);
         txtSend = (EditText) findViewById(R.id.txt_send);
         txtReceived = (TextView) findViewById(R.id.txt_received);
@@ -314,7 +290,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             btnDiscoverPeers.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    //discoverPeers();
+                    discoverPeers();
                 }
             });
         }
@@ -342,75 +318,28 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                 }
             });
         }
-
     }
 
-    public void changeDeviceName(String name) {
-        try {
-            Method mt = wifiP2pManager.getClass().getDeclaredMethod("setDeviceName", WifiP2pManager.Channel.class, String.class, WifiP2pManager.ActionListener.class);
-            mt.invoke(wifiP2pManager, wifiP2pChannel, name, new WifiP2pManager.ActionListener() {
-                @Override
-                public void onSuccess() {
-                    appendLogUiThread("Name Change -> Success");
-                }
+    private void setupNetworking() {
+        wifiIntentFilter.addAction(WifiManager.NETWORK_IDS_CHANGED_ACTION);
+        wifiIntentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+        wifiIntentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
+        wifiIntentFilter.addAction(WifiManager.SUPPLICANT_CONNECTION_CHANGE_ACTION);
+        wifiIntentFilter.addAction(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
+        wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 
-                @Override
-                public void onFailure(int reason) {
-                    appendLogUiThread("Name Change -> Fail");
-                }
-            });
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        }
-    }
+        wifiP2pIntentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);//  Indicates a change in the Wi-Fi P2P status.
+        wifiP2pIntentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION); // Indicates a change in the list of available peers.
+        wifiP2pIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);// Indicates the state of Wi-Fi P2P connectivity has changed.
+        wifiP2pIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);// Indicates this device's details have changed.
+        wifiP2pIntentFilter.addAction(WifiP2pManager.WIFI_P2P_DISCOVERY_CHANGED_ACTION);//Indicates that peer discovery has either started or stopped.
+        wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
+        wifiP2pChannel = wifiP2pManager.initialize(this, getMainLooper(), null);
 
-    void testChangeDhcp() {
-        Class mWifiP2pService_;
-        Field fieldAddress;
-        Field fieldRange;
-
-        //final String P2P_SERVICE_CLASS = "com.android.server.wifi.p2p.WifiP2pServiceImpl";//for Lollipop
-        final String P2P_SERVICE_CLASS = "android.net.wifi.p2p.WifiP2pService";//Before Lollipop
-
-        try {
-            // Get power profile class and create instance. We have to do this
-            // dynamically because android.internal package is not part of public API
-            mWifiP2pService_ = Class.forName(P2P_SERVICE_CLASS);
-            fieldAddress = mWifiP2pService_.getDeclaredField("SERVER_ADDRESS");
-            fieldAddress.setAccessible(true);
-            /*Field[] flds = Field.class.getDeclaredFields();
-            for (Field fld : flds) {
-                Log.e("fld", fld.getName());
-            }
-            Method[] mthds = Field.class.getDeclaredMethods();
-            for (Method mthd : mthds) {
-                Log.e("mthds", mthd.getName());
-            }*/
-            //Method getModifiers = Field.class.getDeclaredMethod("getModifiers");
-            //Field mod =(Field) getModifiers.invoke(fieldAddress);
-
-            /*Field modifiersField1 = fieldAddress.getClass().getDeclaredField("modifiers");
-            modifiersField1.setAccessible(true);
-            modifiersField1.setInt(fieldAddress, fieldAddress.getModifiers() & ~Modifier.FINAL);*/
-            fieldAddress.set(null, "192.168.50.1");
-            Log.e("FieldValue", fieldAddress.get(null).toString());
-/*
-            fieldRange = mWifiP2pService_.getField("DHCP_RANGE");
-            fieldRange.setAccessible(true);
-            Field modifiersField2 = Field.class.getDeclaredField("modifiers");
-            modifiersField2.setAccessible(true);
-            modifiersField2.setInt(fieldRange, fieldRange.getModifiers() & ~Modifier.FINAL);
-            String[] DHCP_RANGE = {"192.168.50.2", "192.168.50.254"};
-            fieldRange.set(null, DHCP_RANGE);
-*/
-        } catch (Exception e) {
-            // Class not found?
-            e.printStackTrace();
-        }
+        //Enable WiFi
+        wifiManager.setWifiEnabled(true);
+        //Clean the WiFi configured networks
+        removeConfiguredLegacyAPs("++++++++++++");
     }
 
     @Override
@@ -448,6 +377,13 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         requestRun = false;
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
     /*@Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
@@ -456,13 +392,6 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             tapAcceptInvitationAutomatically();
         }
     }*/
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -539,14 +468,6 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         }
     }
 
-    /*
-        private String getPeerInfoString(String ipAdress, boolean isGo) {
-            String info = "N/A, N/A,"
-                    + ipAdress + ","
-                    + (isGo ? "1" : "0");
-            return null;
-        }
-    */
     public boolean connectDataAsServer() {
         try {
             if (dataHandler == null) {
@@ -741,30 +662,6 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                 });
     }
 
-    private void encryptDecryptRecord(Map<String, String> record, Boolean encrypt) {
-        if (record.containsKey(RECORD_TYPE)) {
-            encryptDecryptRecordElement(record, encrypt, RECORD_TYPE);
-        }
-        if (record.containsKey(RECORD_LEVEL)) {
-            encryptDecryptRecordElement(record, encrypt, RECORD_LEVEL);
-        }
-        if (record.containsKey(RECORD_CAPACITY)) {
-            encryptDecryptRecordElement(record, encrypt, RECORD_CAPACITY);
-        }
-        if (record.containsKey(RECORD_CHARGING)) {
-            encryptDecryptRecordElement(record, encrypt, RECORD_CHARGING);
-        }
-        if (record.containsKey(RECORD_PROPOSED_IP)) {
-            encryptDecryptRecordElement(record, encrypt, RECORD_PROPOSED_IP);
-        }
-        if (record.containsKey(RECORD_SSID)) {
-            encryptDecryptRecordElement(record, encrypt, RECORD_SSID);
-        }
-        if (record.containsKey(RECORD_KEY)) {
-            encryptDecryptRecordElement(record, encrypt, RECORD_KEY);
-        }
-    }
-
     private synchronized void encryptDecryptRecordElement(Map<String, String> record, Boolean encrypt, String recordElement) {
         String oldString = record.get(recordElement);
         String newString = encrypt ? getEncryptedString(oldString) : getDecryptedString(oldString);
@@ -929,6 +826,17 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                                         discoveryPeersInfo.addOrUpdate(srcDevice.deviceAddress, rec);
                                 discoveryPeersInfo.addDevice(srcDevice);
 
+                                //If I am in collecting device info phase I should check if my
+                                // proposed IP is conflicting with other devices or not.
+                                if (discoveryPeersInfo.isMyProposedIpConflicting(myProposedIP)) {
+                                    myProposedIP = discoveryPeersInfo.getConflictFreeIP();
+                                }
+
+                                // If a new group info (SSID, Key) is received while I am collecting
+                                // battery info, the device should declare itself as GM and start
+                                // selecting a group. If the device is already in the group selection
+                                // phase when it received the new group info, it has to restart the
+                                // phase to get a chance to do a better decision.
                                 if (!groupInfoSeenBefore)
                                     checkForDiscoveredGroups(rec);
                             }
@@ -990,7 +898,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     }
 
     private synchronized void checkForDiscoveredGroups(Map<String, String> record) {
-        if (thisDeviceState == ThisDeviceState.COLLECTING_BATTERY_INFO
+        if (thisDeviceState == ThisDeviceState.COLLECTING_DEVICE_INFO
                 || thisDeviceState == ThisDeviceState.GM_SELECTING_GO)
             if (record.containsKey(RECORD_KEY))
                 if (record.get(RECORD_TYPE).equals(RECORD_TYPE_LEGACY_AP)) {
@@ -1001,8 +909,6 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                         appendLogUiThread("FOUND GROUPS NEARBY ......................");
                         declareGoHandler.removeCallbacks(declareGoRunnable);
                         declareGM();
-
-                        //connectToLegacyApAndOpenSockets(ssid, key);
                     }
                 }
     }
@@ -1309,7 +1215,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         WifiP2pDevice selGo = discoveryPeersInfo.getSelectedGoDevice();
         if (selGo != null) {
             appendLogUiThread("THE BEST GO IS " + selGo.deviceName + ", TRYING TO CONNECT TO IT");
-            connectP2pDevice(discoveryPeersInfo.getSelectedGoDevice());
+            connectP2pDevice(selGo);
         } else {
             appendLogUiThread("I COULD NOT DECIDE THE BEST GO");
             tearDownGroupAndReRun();
@@ -1432,7 +1338,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
         if (reRun) {
             declareGoHandler.postDelayed(declareGoRunnable, DECLARE_GO_PERIOD);
-            thisDeviceState = ThisDeviceState.COLLECTING_BATTERY_INFO;
+            thisDeviceState = ThisDeviceState.COLLECTING_DEVICE_INFO;
 
             startTimers();
             createDeviceInfoService();
@@ -1749,7 +1655,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         if (isWifiP2pEnabled) {
             clearAllLocalServices();
             sleep(500);
-            if (thisDeviceState == ThisDeviceState.COLLECTING_BATTERY_INFO
+            if (thisDeviceState == ThisDeviceState.COLLECTING_DEVICE_INFO
                     || thisDeviceState == ThisDeviceState.GM_SELECTING_GO
                     /*|| thisDeviceState == ThisDeviceState.GO_SENDING_LEGACY_INFO*/) {
                 discoverServices();
@@ -1761,7 +1667,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         if (isWifiP2pEnabled) {
             clearAllLocalServices();
             sleep(500);
-            if (thisDeviceState == ThisDeviceState.COLLECTING_BATTERY_INFO
+            if (thisDeviceState == ThisDeviceState.COLLECTING_DEVICE_INFO
                     || thisDeviceState == ThisDeviceState.GO_SENDING_LEGACY_INFO
                     || thisDeviceState == ThisDeviceState.GO_ACCEPTING_CONNECTIONS) {
                 createDeviceInfoService();
@@ -1776,7 +1682,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
     public enum ThisDeviceState {
         STARTED,
-        COLLECTING_BATTERY_INFO,
+        COLLECTING_DEVICE_INFO,
         GO_ACCEPTING_CONNECTIONS,
         GO_SENDING_LEGACY_INFO,
         GM_SELECTING_GO,
@@ -1864,65 +1770,3 @@ class AddServicesTask extends TimerTask {
             activity.addServicesTask();
     }
 }
-
-
-/*
-from http://stackoverflow.com/questions/6205210/is-this-how-to-schedule-a-java-method-to-run-1-second-later
-Handler handler = new Handler();
-handler.postDelayed(new Runnable()
-{
-     @Override
-     public void run()
-     {
-         myMethod();
-     }
-}, 1000);
-* */
-
-/*from https://code.google.com/p/boxeeremote/wiki/AndroidUDP
-
-    InetAddress getBroadcastAddress() throws IOException {
-        WifiManager wifi = mContext.getSystemService(Context.WIFI_SERVICE);
-        DhcpInfo dhcp = wifi.getDhcpInfo();
-        // handle null somehow
-
-        int broadcast = (dhcp.ipAddress & dhcp.netmask) | ~dhcp.netmask;
-        byte[] quads = new byte[4];
-        for (int k = 0; k < 4; k++)
-            quads[k] = (byte) ((broadcast >> k * 8) & 0xFF);
-        return InetAddress.getByAddress(quads);
-        }
-
-
-        DatagramSocket socket = new DatagramSocket(PORT);
-        socket.setBroadcast(true);
-        DatagramPacket packet = new DatagramPacket(data.getBytes(), data.length(),
-                getBroadcastAddress(), DISCOVERY_PORT);
-        socket.send(packet);
-
-        byte[] buf = new byte[1024];
-        DatagramPacket packet = new DatagramPacket(buf, buf.length);
-        socket.receive(packet);
-
-*/
-
-/*http://stackoverflow.com/questions/3301635/change-private-static-final-field-using-java-reflection
-import java.lang.reflect.*;
-
-public class EverythingIsTrue {
-   static void setFinalStatic(Field field, Object newValue) throws Exception {
-      field.setAccessible(true);
-
-      Field modifiersField = Field.class.getDeclaredField("modifiers");
-      modifiersField.setAccessible(true);
-      modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-
-      field.set(null, newValue);
-   }
-   public static void main(String args[]) throws Exception {
-      setFinalStatic(Boolean.class.getField("FALSE"), true);
-
-      System.out.format("Everything is %s", false); // "Everything is true"
-   }
-}
- */

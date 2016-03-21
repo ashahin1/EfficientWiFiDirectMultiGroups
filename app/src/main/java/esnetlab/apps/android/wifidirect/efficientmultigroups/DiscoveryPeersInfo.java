@@ -189,6 +189,31 @@ public class DiscoveryPeersInfo {
         return meIsBest;
     }
 
+    public boolean isMyProposedIpConflicting(int myProposedIP) {
+        boolean conflict = false;
+
+        for (DiscoveryPeerInfo pInfo : peersInfo) {
+            if (pInfo.proposedIP != -1) {
+                if (pInfo.proposedIP == myProposedIP) {
+                    conflict = true;
+                    break;
+                }
+            }
+        }
+
+        return conflict;
+    }
+
+    public int getConflictFreeIP() {
+        int pIP = DiscoveryPeerInfo.generateProposedIP();
+
+        while (isMyProposedIpConflicting(pIP)) {
+            pIP = DiscoveryPeerInfo.generateProposedIP();
+        }
+
+        return pIP;
+    }
+
     public String toStringGoOnly() {
         String str = "";
         for (DiscoveryPeerInfo discoveryPeerInfo : peersInfo) {
