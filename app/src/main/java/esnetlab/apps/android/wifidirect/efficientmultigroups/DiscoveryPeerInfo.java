@@ -1,5 +1,7 @@
 package esnetlab.apps.android.wifidirect.efficientmultigroups;
 
+import android.util.Log;
+
 import java.util.Locale;
 import java.util.Random;
 
@@ -14,6 +16,7 @@ public class DiscoveryPeerInfo {
     public static final String LEGACY_KEY = "LegacyKey";
     public static final String BATTERY_IS_CHARGING = "BatteryIsCharging";
     public static final String PROPOSED_IP = "ProposedIP";
+
     public String deviceId;
     public int batteryLevel;
     public int batteryCapacity;
@@ -78,8 +81,9 @@ public class DiscoveryPeerInfo {
     static public int generateProposedIP() {
         int pIP = -1;
 
-        //Generate a random integer and shift it bt 49, which is the starting IP range for Wi-Fi Direct
-        pIP = new Random().nextInt(20) + 49;
+        //Generate a random integer and shift it by 49, which is the starting IP range for Wi-Fi Direct
+        //The upper limit for the generated ip octet is 254, and the lower limit is 49
+        pIP = new Random().nextInt(205) + 49;
 
         return pIP;
     }
@@ -104,16 +108,20 @@ public class DiscoveryPeerInfo {
     }
 
     public float getCalculatedRank() {
-        //Charging -> 0.34
-        //Level -> 0.33
-        //Capacity -> 0.33
+        //Charging -> mRankAlpha
+        //Level -> mRankBeta
+        //Capacity -> mRankGamma
         float rank = 0.0f;
 
-        rank += batteryIsCharging ? 0.34f : 0.0f;
-        rank += (batteryLevel / 100.0) * 0.33f;
-        rank += (batteryCapacity / 4000.0) * 0.33f;
+        rank += batteryIsCharging ? EfficientWiFiP2pGroupsActivity.mRankAlpha : 0.0f;
+        rank += ((batteryLevel + 0.0001f) / 100.0f) * EfficientWiFiP2pGroupsActivity.mRankBeta;
+        rank += ((batteryCapacity + 0.0001f) /
+                EfficientWiFiP2pGroupsActivity.mRankMaxCapacity) *
+                EfficientWiFiP2pGroupsActivity.mRankGamma;
+        rank += new Random().nextFloat() * 0.0001f;
 
-        return rank + new Random().nextFloat();
+        Log.d(EfficientWiFiP2pGroupsActivity.TAG, "getCalculatedRank: " + rank);
+        return rank;
     }
 
     @Override

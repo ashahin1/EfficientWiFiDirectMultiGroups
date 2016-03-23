@@ -1,0 +1,20 @@
+<preference-headers xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- These settings headers are only used on tablets. -->
+
+    <header
+        android:fragment="esnetlab.apps.android.wifidirect.efficientmultigroups.SettingsActivity$GeneralPreferenceFragment"
+        android:icon="@drawable/ic_notifications_black_24dp"
+        android:title="@string/pref_header_protocol_timing" />
+
+    <header
+        android:fragment="esnetlab.apps.android.wifidirect.efficientmultigroups.SettingsActivity$RankingParametersPreferenceFragment"
+        android:icon="@drawable/ic_info_black_24dp"
+        android:title="@string/pref_header_ranking_parameters" />
+
+    <header
+        android:fragment="esnetlab.apps.android.wifidirect.efficientmultigroups.SettingsActivity$PortsPreferenceFragment"
+        android:icon="@drawable/ic_sync_black_24dp"
+        android:title="@string/pref_header_ports" />
+
+</preference-headers>

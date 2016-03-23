@@ -28,16 +28,16 @@ public class SocketManager implements Runnable {
         this.handler = handler;
         this.port = portUsed;
         //this.isDataSocket = isDataSocket;
-        if (port == EfficientWiFiP2pGroupsActivity.MGMNT_PORT) {
+        if (port == EfficientWiFiP2pGroupsActivity.mMgmntPort) {
             whatHandle = EfficientWiFiP2pGroupsActivity.MGMNT_SOCKET_HANDLE;
             whatRead = EfficientWiFiP2pGroupsActivity.MGMNT_MESSAGE_READ;
-        } else if (port == EfficientWiFiP2pGroupsActivity.DATA_PORT) {
+        } else if (port == EfficientWiFiP2pGroupsActivity.mDataPort) {
             whatHandle = EfficientWiFiP2pGroupsActivity.DATA_SOCKET_HANDLE;
             whatRead = EfficientWiFiP2pGroupsActivity.DATA_MESSAGE_READ;
-        } else if (port == EfficientWiFiP2pGroupsActivity.PROXY_MGMNT_PORT) {
+        } else if (port == EfficientWiFiP2pGroupsActivity.mProxyMgmntPort) {
             whatHandle = EfficientWiFiP2pGroupsActivity.PROXY_MGMNT_SOCKET_HANDLE;
             whatRead = EfficientWiFiP2pGroupsActivity.PROXY_MGMNT_MESSAGE_READ;
-        } else if (port == EfficientWiFiP2pGroupsActivity.PROXY_DATA_PORT) {
+        } else if (port == EfficientWiFiP2pGroupsActivity.mProxyDataPort) {
             whatHandle = EfficientWiFiP2pGroupsActivity.PROXY_DATA_SOCKET_HANDLE;
             whatRead = EfficientWiFiP2pGroupsActivity.PROXY_DATA_MESSAGE_READ;
         }

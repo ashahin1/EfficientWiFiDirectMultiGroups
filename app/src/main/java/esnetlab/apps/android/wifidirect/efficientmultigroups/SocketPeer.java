@@ -72,13 +72,13 @@ class SocketPeer {
      */
     public void connectToDataPort(MessageTarget mTarget) {
         Thread handler = new ClientSocketHandler(mTarget.getHandler(),
-                ipAddress, EfficientWiFiP2pGroupsActivity.DATA_PORT);
+                ipAddress, EfficientWiFiP2pGroupsActivity.mDataPort);
         handler.start();
     }
 
     public void connectToProxyDataPort(MessageTarget mTarget) {
         Thread handler = new ClientSocketHandler(mTarget.getHandler(),
-                ipAddress, EfficientWiFiP2pGroupsActivity.PROXY_DATA_PORT);
+                ipAddress, EfficientWiFiP2pGroupsActivity.mProxyDataPort);
         handler.start();
     }
 

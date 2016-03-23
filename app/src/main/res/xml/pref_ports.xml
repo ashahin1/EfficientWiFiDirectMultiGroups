@@ -1,0 +1,47 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <EditTextPreference
+        android:capitalize="words"
+        android:defaultValue="@integer/pref_default_group_management_port"
+        android:inputType="number"
+        android:numeric="integer"
+        android:key="group_management_port_text"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_group_management_port" />
+
+    <EditTextPreference
+        android:capitalize="words"
+        android:defaultValue="@integer/pref_default_group_data_port"
+        android:inputType="number"
+        android:numeric="integer"
+        android:key="group_data_port_text"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_group_data_port" />
+
+    <EditTextPreference
+        android:capitalize="words"
+        android:defaultValue="@integer/pref_default_proxy_management_port"
+        android:inputType="number"
+        android:numeric="integer"
+        android:key="proxy_management_port_text"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_proxy_management_port" />
+
+    <EditTextPreference
+        android:capitalize="words"
+        android:defaultValue="@integer/pref_default_proxy_data_port"
+        android:inputType="number"
+        android:numeric="integer"
+        android:key="proxy_data_port_text"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_proxy_data_port" />
+
+</PreferenceScreen>

@@ -5,4 +5,65 @@
     <string name="checkBatteryStatus">Check Battery Status</string>
     <string name="action_toggle_wifi">Toggle Wi-Fi</string>
     <string name="action_clear_log">Clear Log</string>
+    <string name="title_activity_settings">Settings</string>
+
+    <!-- Strings related to Settings -->
+
+    <!-- Settings for Protocol Timing -->
+    <string name="pref_header_protocol_timing">Protocol Timing</string>
+
+    <string name="pref_title_send_my_info">Send My Info Period</string>
+    <integer name="pref_default_send_my_info">2000</integer>
+
+    <string name="pref_title_send_peers_info">Send Peers Info Period</string>
+    <integer name="pref_default_send_peers_info">4000</integer>
+
+    <string name="pref_title_discover_services">Discover Services Period</string>
+    <integer name="pref_default_discover_services">6000</integer>
+
+    <string name="pref_title_add_services">Add Services period</string>
+    <integer name="pref_default_add_services">3000</integer>
+
+    <string name="pref_title_declare_go">Declare GO Period</string>
+    <integer name="pref_default_declare_go">30000</integer>
+
+    <string name="pref_title_decide_group">Decide Group Period</string>
+    <integer name="pref_default_decide_group">15000</integer>
+
+    <string name="pref_title_decide_proxy">Decide Proxy Period</string>
+    <integer name="pref_default_decide_proxy">40000</integer>
+
+    <string name="pref_title_send_nearby_legacy_aps_info">Send Nearby Legacy APs Info Period</string>
+    <integer name="pref_default_send_nearby_legacy_aps_info">3000</integer>
+
+    <string name="pref_title_send_tear_down">Send Teardown Period</string>
+    <integer name="pref_default_send_tear_down">300000</integer>
+
+    <!-- Settings for Ranking Parameters -->
+    <string name="pref_header_ranking_parameters">Ranking Parameters</string>
+    <string name="pref_title_rank_alpha">Ranking Alpha Parameter</string>
+    <string name="pref_default_rank_alpha">0.34</string>
+
+    <string name="pref_title_rank_beta">Ranking Beta Parameter</string>
+    <string name="pref_default_rank_beta">0.33</string>
+
+    <string name="pref_title_rank_gamma">Ranking Gamma Parameter</string>
+    <string name="pref_default_rank_gamma">0.33</string>
+
+    <string name="pref_title_rank_max_capacity">Ranking Max Capacity Parameter</string>
+    <string name="pref_default_rank_max_capacity">4000</string>
+
+    <!-- Settings for Ports -->
+    <string name="pref_header_ports">Ports</string>
+    <string name="pref_title_group_management_port">Group Management Port</string>
+    <integer name="pref_default_group_management_port">4546</integer>
+
+    <string name="pref_title_group_data_port">Group Data Port</string>
+    <integer name="pref_default_group_data_port">4545</integer>
+
+    <string name="pref_title_proxy_management_port">Proxy Management Port</string>
+    <integer name="pref_default_proxy_management_port">4544</integer>
+
+    <string name="pref_title_proxy_data_port">Proxy Data Port</string>
+    <integer name="pref_default_proxy_data_port">4543</integer>
 </resources>

@@ -27,7 +27,7 @@ public class ProxyManagementSocketHandler extends Thread {
 
     public ProxyManagementSocketHandler(Handler handler) throws IOException {
         try {
-            socket = new ServerSocket(EfficientWiFiP2pGroupsActivity.PROXY_MGMNT_PORT);
+            socket = new ServerSocket(EfficientWiFiP2pGroupsActivity.mProxyMgmntPort);
             this.handler = handler;
             Log.d(TAG, "Socket Started");
         } catch (IOException e) {
@@ -43,7 +43,7 @@ public class ProxyManagementSocketHandler extends Thread {
             try {
                 // A blocking operation. Initiate a SocketManager instance when
                 // there is a new connection
-                pool.execute(new SocketManager(socket.accept(), handler, EfficientWiFiP2pGroupsActivity.PROXY_MGMNT_PORT));
+                pool.execute(new SocketManager(socket.accept(), handler, EfficientWiFiP2pGroupsActivity.mProxyMgmntPort));
                 Log.d(TAG, "Launching the I/O handler");
 
             } catch (IOException e) {

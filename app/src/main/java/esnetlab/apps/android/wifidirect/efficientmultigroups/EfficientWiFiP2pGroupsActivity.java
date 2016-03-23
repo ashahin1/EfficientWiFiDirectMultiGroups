@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.net.DhcpInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SupplicantState;
@@ -23,6 +24,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
@@ -54,10 +56,11 @@ import java.util.TimerTask;
 
 public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements WifiP2pManager.ConnectionInfoListener, Handler.Callback, MessageTarget {
 
-
     public static final String TAG = "EfficientWiFiP2pGroups";
     public static final String SERVICE_INSTANCE = "_wifip2p_efficient";
     public static final String SERVICE_REG_TYPE = "_presence._tcp";
+
+    //Constants used in HandleMessage method
     public static final int DATA_MESSAGE_READ = 0x400 + 1;
     public static final int DATA_SOCKET_HANDLE = 0x400 + 2;
     public static final int MGMNT_MESSAGE_READ = 0x400 + 3;
@@ -67,10 +70,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     public static final int PROXY_DATA_SOCKET_HANDLE = 0x400 + 7;
     public static final int PROXY_MGMNT_MESSAGE_READ = 0x400 + 8;
     public static final int PROXY_MGMNT_SOCKET_HANDLE = 0x400 + 9;
-    public static final int MGMNT_PORT = 4546;
-    public static final int DATA_PORT = 4545;
-    public static final int PROXY_MGMNT_PORT = 4544;
-    public static final int PROXY_DATA_PORT = 4543;
+
+    //Record specific constants
     public static final String RECORD_TYPE = "tp";
     public static final String RECORD_TYPE_DEVICE_INFO = "0";
     public static final String RECORD_TYPE_LEGACY_AP = "1";
@@ -81,26 +82,68 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     public static final String RECORD_KEY = "key";
     public static final String RECORD_PROPOSED_IP = "pIP";
     public static final String PASSWORD = "AllahAkbarAllahA";
-    public static final int SEND_MY_INF_PERIOD = 2000;
-    public static final int SEND_PEERS_INFO_PERIOD = 4000;
-    public static final int DISCOVER_SERVICES_PERIOD = 6000;
-    public static final int ADD_SERVICES_PERIOD = 3000;
-    private static final int DECLARE_GO_PERIOD = 30000;
-    private static final int DECIDE_GROUP_PERIOD = 15000;
-    private static final int DECIDE_PROXY_PERIOD = 40000;
-    private static final int SEND_TEAR_DOWN_PERIOD = 300000;
-    private static final int SEND_NEARBY_LEGACY_APS_INFO_PERIOD = 3000;
+
+    //Port parameters
+    public static int mMgmntPort = 4546;
+    public static int mDataPort = 4545;
+    public static int mProxyMgmntPort = 4544;
+    public static int mProxyDataPort = 4543;
+
+    //Pref_Keys for port parameters
+    public static final String PREF_MGMNT_PORT = "group_management_port_text";
+    public static final String PREF_DATA_PORT = "group_data_port_text";
+    public static final String PREF_PROXY_MGMNT_PORT = "proxy_management_port_text";
+    public static final String PREF_PROXY_DATA_PORT = "proxy_data_port_text";
+
+    //Ranking parameters
+    public static float mRankAlpha = 0.34f;
+    public static float mRankBeta = 0.33f;
+    public static float mRankGamma = 0.33f;
+    public static float mRankMaxCapacity = 4000.0f;
+
+    //Pref_Keys for ranking parameters
+    public static final String PREF_RANK_ALPHA = "rank_alpha_text";
+    public static final String PREF_RANK_BETA = "rank_beta_text";
+    public static final String PREF_RANK_GAMMA = "rank_gamma_text";
+    public static final String PREF_RANK_MAX_CAPACITY = "rank_max_capacity_text";
+
+    //Protocol timing parameters
+    public static int mSendMyInfPeriod = 2000;
+    public static int mSendPeersInfoPeriod = 4000;
+    public static int mDiscoverServicesPeriod = 6000;
+    public static int mAddServicesPeriod = 3000;
+    public static int mDeclareGoPeriod = 30000;
+    public static int mDecideGroupPeriod = 15000;
+    public static int mDecideProxyPeriod = 40000;
+    public static int mSendNearbyLegacyApsInfoPeriod = 3000;
+    public static int mSendTearDownPeriod = 300000;
+
+    //Pref_Keys for protocol timing parameters
+    public static final String PREF_SEND_MY_INF_PERIOD = "send_my_info_text";
+    public static final String PREF_SEND_PEERS_INFO_PERIOD = "send_peers_info_text";
+    public static final String PREF_DISCOVER_SERVICES_PERIOD = "discover_services_text";
+    public static final String PREF_ADD_SERVICES_PERIOD = "add_services_text";
+    public static final String PREF_DECLARE_GO_PERIOD = "declare_go_text";
+    public static final String PREF_DECIDE_GROUP_PERIOD = "decide_group_text";
+    public static final String PREF_DECIDE_PROXY_PERIOD = "decide_proxy_text";
+    public static final String PREF_SEND_NEARBY_LEGACY_APS_INFO_PERIOD = "send_nearby_legacy_aps_text";
+    public static final String PREF_SEND_TEAR_DOWN_PERIOD = "send_tear_down_text";
+
     public static WifiP2pInfo p2pInfo = null;
     public static WifiP2pGroup p2pGroup = null;
     public static WifiP2pDevice p2pDevice = null;
     public static Boolean wifiScanCompleted = false;
     public static Boolean wifiSupplicantAssociated = false;
+    public SharedPreferences sharedPreferences;
     private final IntentFilter wifiIntentFilter = new IntentFilter();
     private final IntentFilter wifiP2pIntentFilter = new IntentFilter();
     private final DiscoveryPeersInfo discoveryPeersInfo = new DiscoveryPeersInfo();
     private final SocketPeers groupSocketPeers = new SocketPeers();
     private final LegacyGroupsInfo legacyGroupsInfo = new LegacyGroupsInfo();
     private final HashMap<String, Map<String, String>> buddies = new HashMap<>();
+
+    //Handlers
+    private Handler handler = new Handler(this);
     private final Handler declareGoHandler = new Handler();
     private final Handler decideGroupHandler = new Handler();
     private final Handler decideProxyHandler = new Handler();
@@ -108,72 +151,12 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     private final Handler tearDownHandler = new Handler();
     private final Handler declareGoAcceptingGMsHandler = new Handler();
     private final Handler sendNearbyLegacyApsInfoHandler = new Handler();
-    private final Runnable sendTearDownRunnable = new Runnable() {
-        @Override
-        public void run() {
-            sendTearDownToMembers();
-        }
-    };
-    public ThisDeviceState thisDeviceState = ThisDeviceState.STARTED;
-    private final Runnable declareGoAcceptingGMsRunnable = new Runnable() {
-        @Override
-        public void run() {
-            declareGoAcceptingGMs();
-        }
-    };
-    public int myProposedIP = DiscoveryPeerInfo.generateProposedIP();
-    TextView txtLog;
-    private final Runnable decideProxyRunnable = new Runnable() {
-        @Override
-        public void run() {
-            decideProxiesAndInformMembers();
-        }
-    };
-    EditText txtSend;
-    TextView txtReceived;
-    Thread th1, th2;
-    boolean requestRun = false;
-    Thread mgntHandler = null;
-    Thread dataHandler = null;
-    Thread proxyMgntHandler = null;
-    Thread proxyDataHandler = null;
-    private BatteryInformation batteryInfo = new BatteryInformation();
-    private WifiManager wifiManager;
-    private WifiBroadcastReceiver wifiBroadcastReceiver;
-    private WifiP2pManager wifiP2pManager;
-    private WifiP2pManager.Channel wifiP2pChannel;
-    private WiFiP2pBroadcastReceiver wifiP2pBroadcastReceiver;
-    private boolean isWifiP2pEnabled = false;
-    private final Runnable sendNearbyLegacyApsInfoRunnable = new Runnable() {
-        @Override
-        public void run() {
-            sendNearbyLegacyApsInfo();
-        }
-    };
+
+    //Runnables
     private final Runnable declareGoRunnable = new Runnable() {
         @Override
         public void run() {
             declareGo();
-        }
-    };
-    private WifiP2pDnsSdServiceRequest serviceRequest;
-    private WifiP2pDnsSdServiceInfo serviceDeviceInfo;
-    private WifiP2pDnsSdServiceInfo serviceInfoLegacyAp;
-    private Handler handler = new Handler(this);
-    private SocketPeer proxySocketPeer = new SocketPeer();
-    private boolean lastWifiState = false;
-    //private SendMyInfoTask sendMyInfoTask = new SendMyInfoTask();
-    private Timer sendMyInfoTimer = new Timer("sendMyInfoTimer");
-    //private SendPeersInfoTask sendPeersInfoTask = new SendPeersInfoTask();
-    private Timer sendPeersInfoTimer = new Timer("sendPeersInfoTimer");
-    //private DiscoverServicesTask discoverServicesTask = new DiscoverServicesTask();
-    private Timer discoverServicesTimer = new Timer("discoverServicesTimer");
-    //private AddServicesTask addServicesTask = new AddServicesTask();
-    private Timer addServicesTimer = new Timer("addServicesTimer");
-    private final Runnable tearDownRunnable = new Runnable() {
-        @Override
-        public void run() {
-            tearDownGroupAndReRun();
         }
     };
     private final Runnable decideGroupRunnable = new Runnable() {
@@ -182,6 +165,74 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             decideGroupAndConnect();
         }
     };
+    private final Runnable declareGoAcceptingGMsRunnable = new Runnable() {
+        @Override
+        public void run() {
+            declareGoAcceptingGMs();
+        }
+    };
+    private final Runnable decideProxyRunnable = new Runnable() {
+        @Override
+        public void run() {
+            decideProxiesAndInformMembers();
+        }
+    };
+    private final Runnable sendNearbyLegacyApsInfoRunnable = new Runnable() {
+        @Override
+        public void run() {
+            sendNearbyLegacyApsInfo();
+        }
+    };
+    private final Runnable tearDownRunnable = new Runnable() {
+        @Override
+        public void run() {
+            tearDownGroupAndReRun();
+        }
+    };
+    private final Runnable sendTearDownRunnable = new Runnable() {
+        @Override
+        public void run() {
+            sendTearDownToMembers();
+        }
+    };
+    //End of Runnables
+
+    public ThisDeviceState thisDeviceState = ThisDeviceState.STARTED;
+
+    public int myProposedIP = DiscoveryPeerInfo.generateProposedIP();
+
+    TextView txtLog;
+    EditText txtSend;
+    TextView txtReceived;
+
+    boolean requestRun = false;
+
+    Thread th1, th2;
+    Thread mgntHandler = null;
+    Thread dataHandler = null;
+    Thread proxyMgntHandler = null;
+    Thread proxyDataHandler = null;
+
+    private BatteryInformation batteryInfo = new BatteryInformation();
+    private WifiManager wifiManager;
+    private WifiBroadcastReceiver wifiBroadcastReceiver;
+    private WifiP2pManager wifiP2pManager;
+    private WifiP2pManager.Channel wifiP2pChannel;
+    private WiFiP2pBroadcastReceiver wifiP2pBroadcastReceiver;
+    private boolean isWifiP2pEnabled = false;
+
+    private WifiP2pDnsSdServiceRequest serviceRequest;
+    private WifiP2pDnsSdServiceInfo serviceDeviceInfo;
+    private WifiP2pDnsSdServiceInfo serviceInfoLegacyAp;
+
+    private SocketPeer proxySocketPeer = new SocketPeer();
+
+    private boolean lastWifiState = false;
+
+    private Timer sendMyInfoTimer = new Timer("sendMyInfoTimer");
+    private Timer sendPeersInfoTimer = new Timer("sendPeersInfoTimer");
+    private Timer discoverServicesTimer = new Timer("discoverServicesTimer");
+    private Timer addServicesTimer = new Timer("addServicesTimer");
 
     //Taken from -> https://code.google.com/p/android-wifi-connecter/
     public static String convertToQuotedString(String string) {
@@ -233,11 +284,38 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        setupPreferences();
         //Force always on screen.
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         thisDeviceState = ThisDeviceState.STARTED;
         setupNetworking();
         setupControls();
+    }
+
+    private void setupPreferences() {
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        if (sharedPreferences != null) {
+            mMgmntPort = Integer.parseInt(sharedPreferences.getString(PREF_MGMNT_PORT, String.valueOf(mMgmntPort)));
+            mDataPort = Integer.parseInt(sharedPreferences.getString(PREF_DATA_PORT, String.valueOf(mDataPort)));
+            mProxyMgmntPort = Integer.parseInt(sharedPreferences.getString(PREF_PROXY_MGMNT_PORT, String.valueOf(mProxyMgmntPort)));
+            mProxyDataPort = Integer.parseInt(sharedPreferences.getString(PREF_PROXY_DATA_PORT, String.valueOf(mProxyDataPort)));
+
+            mRankAlpha = Float.parseFloat(sharedPreferences.getString(PREF_RANK_ALPHA, String.valueOf(mRankAlpha)));
+            mRankBeta = Float.parseFloat(sharedPreferences.getString(PREF_RANK_BETA, String.valueOf(mRankBeta)));
+            mRankGamma = Float.parseFloat(sharedPreferences.getString(PREF_RANK_GAMMA, String.valueOf(mRankGamma)));
+            mRankMaxCapacity = Float.parseFloat(sharedPreferences.getString(PREF_RANK_MAX_CAPACITY, String.valueOf(mRankMaxCapacity)));
+
+            mSendMyInfPeriod = Integer.parseInt(sharedPreferences.getString(PREF_SEND_MY_INF_PERIOD, String.valueOf(mSendMyInfPeriod)));
+            mSendPeersInfoPeriod = Integer.parseInt(sharedPreferences.getString(PREF_SEND_PEERS_INFO_PERIOD, String.valueOf(mSendPeersInfoPeriod)));
+            mDiscoverServicesPeriod = Integer.parseInt(sharedPreferences.getString(PREF_DISCOVER_SERVICES_PERIOD, String.valueOf(mDiscoverServicesPeriod)));
+            mAddServicesPeriod = Integer.parseInt(sharedPreferences.getString(PREF_ADD_SERVICES_PERIOD, String.valueOf(mAddServicesPeriod)));
+            mDeclareGoPeriod = Integer.parseInt(sharedPreferences.getString(PREF_DECLARE_GO_PERIOD, String.valueOf(mDeclareGoPeriod)));
+            mDecideGroupPeriod = Integer.parseInt(sharedPreferences.getString(PREF_DECIDE_GROUP_PERIOD, String.valueOf(mDecideGroupPeriod)));
+            mDecideProxyPeriod = Integer.parseInt(sharedPreferences.getString(PREF_DECIDE_PROXY_PERIOD, String.valueOf(mDecideProxyPeriod)));
+            mSendNearbyLegacyApsInfoPeriod = Integer.parseInt(sharedPreferences.getString(PREF_SEND_NEARBY_LEGACY_APS_INFO_PERIOD, String.valueOf(mSendNearbyLegacyApsInfoPeriod)));
+            mSendTearDownPeriod = Integer.parseInt(sharedPreferences.getString(PREF_SEND_TEAR_DOWN_PERIOD, String.valueOf(mSendTearDownPeriod)));
+        }
     }
 
     private void setupControls() {
@@ -402,7 +480,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            return true;
+            showSettingsDialog();
         } else if (id == R.id.action_toggle_wifi) {
             toggleWiFi();
         } else if (id == R.id.action_clear_log) {
@@ -410,6 +488,11 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public void showSettingsDialog() {
+        Intent i = new Intent(this, SettingsActivity.class);
+        startActivity(i);
     }
 
     @Override
@@ -428,7 +511,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             //Handle the case,when the group was formed before opening the program
             if (thisDeviceState != ThisDeviceState.GO_ACCEPTING_CONNECTIONS) {
                 thisDeviceState = ThisDeviceState.GO_ACCEPTING_CONNECTIONS;
-                sendTearDownHandler.postDelayed(sendTearDownRunnable, SEND_TEAR_DOWN_PERIOD);
+                sendTearDownHandler.postDelayed(sendTearDownRunnable, mSendTearDownPeriod);
             }*/
 
             appendLog("Connected as group owner -> Opening Management Sockets");
@@ -459,7 +542,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             if (!connectManagementAsClient(groupOwnerAddress)) return;
 
             sendNearbyLegacyApsInfoHandler.postDelayed(sendNearbyLegacyApsInfoRunnable,
-                    SEND_NEARBY_LEGACY_APS_INFO_PERIOD);
+                    mSendNearbyLegacyApsInfoPeriod);
         }
 
         if (info.groupFormed) {
@@ -501,14 +584,14 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         try {
             if (mgntHandler == null) {
                 mgntHandler = new ClientSocketHandler(this.getHandler(),
-                        groupOwnerAddress, MGMNT_PORT);
+                        groupOwnerAddress, mMgmntPort);
                 mgntHandler.start();
             } else //TODO if (!mgntHandler.isAlive())
             {
                 //mgntHandler.start();
                 ((ClientSocketHandler) mgntHandler).getSocketManager().getSocket().close();
                 mgntHandler = new ClientSocketHandler(this.getHandler(),
-                        groupOwnerAddress, MGMNT_PORT);
+                        groupOwnerAddress, mMgmntPort);
                 mgntHandler.start();
             }
 
@@ -630,9 +713,9 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                             @Override
                             public void onSuccess() {
                                 thisDeviceState = ThisDeviceState.GO_SENDING_LEGACY_INFO;
-                                declareGoAcceptingGMsHandler.postDelayed(declareGoAcceptingGMsRunnable, DECIDE_GROUP_PERIOD);
-                                decideProxyHandler.postDelayed(decideProxyRunnable, DECIDE_PROXY_PERIOD);
-                                sendTearDownHandler.postDelayed(sendTearDownRunnable, SEND_TEAR_DOWN_PERIOD);
+                                declareGoAcceptingGMsHandler.postDelayed(declareGoAcceptingGMsRunnable, mDecideGroupPeriod);
+                                decideProxyHandler.postDelayed(decideProxyRunnable, mDecideProxyPeriod);
+                                sendTearDownHandler.postDelayed(sendTearDownRunnable, mSendTearDownPeriod);
                                 appendLog("Group created successfully.");
                             }
 
@@ -1054,7 +1137,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                 appendLogUiThread("Connected to GO successfully -> " + device.deviceName);
 
                 //To account for device losing connection with GO, we schedule a teardown
-                tearDownHandler.postDelayed(tearDownRunnable, SEND_TEAR_DOWN_PERIOD + 1000);
+                tearDownHandler.postDelayed(tearDownRunnable, mSendTearDownPeriod + 1000);
             }
 
             @Override
@@ -1190,7 +1273,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     private void declareGM() {
         thisDeviceState = ThisDeviceState.GM_SELECTING_GO;
         decideGroupHandler.removeCallbacks(decideGroupRunnable);
-        decideGroupHandler.postDelayed(decideGroupRunnable, DECIDE_GROUP_PERIOD);
+        decideGroupHandler.postDelayed(decideGroupRunnable, mDecideGroupPeriod);
     }
 
     private void declareGo() {
@@ -1199,7 +1282,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             createWifiP2pGroup();
             //Moved to Group creation callback
             //thisDeviceState = ThisDeviceState.GO_ACCEPTING_CONNECTIONS;
-            //sendTearDownHandler.postDelayed(sendTearDownRunnable, SEND_TEAR_DOWN_PERIOD);
+            //sendTearDownHandler.postDelayed(sendTearDownRunnable, mSendTearDownPeriod);
         } else {
             appendLogUiThread("AT LEAST SOMEONE ELSE IS BETTER THAN ME, TRYING TO CHOOSE GROUP");
             declareGM();
@@ -1337,7 +1420,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         proxyDataHandler = null;
 
         if (reRun) {
-            declareGoHandler.postDelayed(declareGoRunnable, DECLARE_GO_PERIOD);
+            declareGoHandler.postDelayed(declareGoRunnable, mDeclareGoPeriod);
             thisDeviceState = ThisDeviceState.COLLECTING_DEVICE_INFO;
 
             startTimers();
@@ -1352,10 +1435,10 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             discoverServicesTimer = new Timer("discoverServicesTimer");
             addServicesTimer = new Timer("addServicesTimer");
 
-            sendMyInfoTimer.schedule(new SendMyInfoTask(this), 0, SEND_MY_INF_PERIOD);
-            sendPeersInfoTimer.schedule(new SendPeersInfoTask(this), 0, SEND_PEERS_INFO_PERIOD);
-            discoverServicesTimer.schedule(new DiscoverServicesTask(this), 0, DISCOVER_SERVICES_PERIOD);
-            addServicesTimer.schedule(new AddServicesTask(this), 0, ADD_SERVICES_PERIOD);
+            sendMyInfoTimer.schedule(new SendMyInfoTask(this), 0, mSendMyInfPeriod);
+            sendPeersInfoTimer.schedule(new SendPeersInfoTask(this), 0, mSendPeersInfoPeriod);
+            discoverServicesTimer.schedule(new DiscoverServicesTask(this), 0, mDiscoverServicesPeriod);
+            addServicesTimer.schedule(new AddServicesTask(this), 0, mAddServicesPeriod);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -1554,11 +1637,11 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                             if (legacyApIpAddress != null) {
                                 appendLogUiThread("Connecting to LegacyAp Sockets -> " + legacyApIpAddress);
                                 Thread thrd1 = new ClientSocketHandler(getHandler(),
-                                        legacyApIpAddress, PROXY_MGMNT_PORT);
+                                        legacyApIpAddress, mProxyMgmntPort);
                                 thrd1.start();
 
                                 Thread thrd2 = new ClientSocketHandler(getHandler(),
-                                        legacyApIpAddress, PROXY_DATA_PORT);
+                                        legacyApIpAddress, mProxyDataPort);
                                 thrd2.start();
                             } else {
                                 appendLogUiThread("Can't get the IP Address of the LegacyAp");

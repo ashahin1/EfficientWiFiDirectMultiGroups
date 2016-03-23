@@ -1,0 +1,47 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <EditTextPreference
+        android:capitalize="words"
+        android:defaultValue="@string/pref_default_rank_alpha"
+        android:inputType="numberDecimal"
+        android:numeric="decimal"
+        android:key="rank_alpha_text"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_rank_alpha" />
+
+    <EditTextPreference
+        android:capitalize="words"
+        android:defaultValue="@string/pref_default_rank_beta"
+        android:inputType="numberDecimal"
+        android:numeric="decimal"
+            android:key="rank_beta_text"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_rank_beta" />
+
+    <EditTextPreference
+        android:capitalize="words"
+        android:defaultValue="@string/pref_default_rank_gamma"
+        android:inputType="numberDecimal"
+        android:numeric="decimal"
+        android:key="rank_gamma_text"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_rank_gamma" />
+
+    <EditTextPreference
+        android:capitalize="words"
+        android:defaultValue="@string/pref_default_rank_max_capacity"
+        android:inputType="numberDecimal"
+        android:numeric="decimal"
+        android:key="rank_max_capacity_text"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_rank_max_capacity" />
+
+</PreferenceScreen>

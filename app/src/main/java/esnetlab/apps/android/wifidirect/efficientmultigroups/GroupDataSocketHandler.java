@@ -29,7 +29,7 @@ public class GroupDataSocketHandler extends Thread {
 
     public GroupDataSocketHandler(Handler handler) throws IOException {
         try {
-            socket = new ServerSocket(EfficientWiFiP2pGroupsActivity.DATA_PORT);
+            socket = new ServerSocket(EfficientWiFiP2pGroupsActivity.mDataPort);
             this.handler = handler;
             Log.d(TAG, "Socket Started");
         } catch (IOException e) {
@@ -46,7 +46,7 @@ public class GroupDataSocketHandler extends Thread {
             try {
                 // A blocking operation. Initiate a SocketManager instance when
                 // there is a new connection
-                pool.execute(new SocketManager(socket.accept(), handler, EfficientWiFiP2pGroupsActivity.DATA_PORT));
+                pool.execute(new SocketManager(socket.accept(), handler, EfficientWiFiP2pGroupsActivity.mDataPort));
                 Log.d(TAG, "Launching the I/O handler");
 
             } catch (IOException e) {
