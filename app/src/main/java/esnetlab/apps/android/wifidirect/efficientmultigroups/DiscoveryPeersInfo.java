@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * Created by Ahmed on 4/7/2015.
  */
-public class DiscoveryPeersInfo {
+public class DiscoveryPeersInfo implements ProtocolConstants {
     public final List<DiscoveryPeerInfo> peersInfo = new ArrayList<>();
     public final List<WifiP2pDevice> devices = new ArrayList<>();
     public DiscoveryPeerInfo selectedGoPeer = null;
@@ -48,29 +48,29 @@ public class DiscoveryPeersInfo {
             peersInfo.add(peerInfo);
         }
 
-        if (record.containsKey(EfficientWiFiP2pGroupsActivity.RECORD_LEVEL)) {
-            peerInfo.batteryLevel = Integer.valueOf(record.get(EfficientWiFiP2pGroupsActivity.RECORD_LEVEL));
+        if (record.containsKey(RECORD_LEVEL)) {
+            peerInfo.batteryLevel = Integer.valueOf(record.get(RECORD_LEVEL));
         }
-        if (record.containsKey(EfficientWiFiP2pGroupsActivity.RECORD_CAPACITY)) {
-            peerInfo.batteryCapacity = Integer.valueOf(record.get(EfficientWiFiP2pGroupsActivity.RECORD_CAPACITY));
+        if (record.containsKey(RECORD_CAPACITY)) {
+            peerInfo.batteryCapacity = Integer.valueOf(record.get(RECORD_CAPACITY));
         }
-        if (record.containsKey(EfficientWiFiP2pGroupsActivity.RECORD_CHARGING)) {
-            peerInfo.batteryIsCharging = Boolean.valueOf(record.get(EfficientWiFiP2pGroupsActivity.RECORD_CHARGING));
+        if (record.containsKey(RECORD_CHARGING)) {
+            peerInfo.batteryIsCharging = Boolean.valueOf(record.get(RECORD_CHARGING));
         }
-        if (record.containsKey(EfficientWiFiP2pGroupsActivity.RECORD_PROPOSED_IP)) {
-            peerInfo.proposedIP = Integer.valueOf(record.get(EfficientWiFiP2pGroupsActivity.RECORD_PROPOSED_IP));
+        if (record.containsKey(RECORD_PROPOSED_IP)) {
+            peerInfo.proposedIP = Integer.valueOf(record.get(RECORD_PROPOSED_IP));
         }
-        if (record.containsKey(EfficientWiFiP2pGroupsActivity.RECORD_SSID)) {
-            if (peerInfo.legacySSID.equals(record.get(EfficientWiFiP2pGroupsActivity.RECORD_SSID)))
+        if (record.containsKey(RECORD_SSID)) {
+            if (peerInfo.legacySSID.equals(record.get(RECORD_SSID)))
                 cond1 = true;
             else
-                peerInfo.legacySSID = record.get(EfficientWiFiP2pGroupsActivity.RECORD_SSID);
+                peerInfo.legacySSID = record.get(RECORD_SSID);
         }
-        if (record.containsKey(EfficientWiFiP2pGroupsActivity.RECORD_KEY)) {
-            if (peerInfo.legacyKey.equals(record.get(EfficientWiFiP2pGroupsActivity.RECORD_KEY)))
+        if (record.containsKey(RECORD_KEY)) {
+            if (peerInfo.legacyKey.equals(record.get(RECORD_KEY)))
                 cond2 = true;
             else
-                peerInfo.legacyKey = record.get(EfficientWiFiP2pGroupsActivity.RECORD_KEY);
+                peerInfo.legacyKey = record.get(RECORD_KEY);
         }
 
         return cond1 & cond2;

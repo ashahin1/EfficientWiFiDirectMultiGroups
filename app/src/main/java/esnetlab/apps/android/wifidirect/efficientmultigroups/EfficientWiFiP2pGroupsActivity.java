@@ -54,34 +54,9 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 
-public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements WifiP2pManager.ConnectionInfoListener, Handler.Callback, MessageTarget {
+public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements WifiP2pManager.ConnectionInfoListener, Handler.Callback, MessageTarget, ProtocolConstants {
 
     public static final String TAG = "EfficientWiFiP2pGroups";
-    public static final String SERVICE_INSTANCE = "_wifip2p_efficient";
-    public static final String SERVICE_REG_TYPE = "_presence._tcp";
-
-    //Constants used in HandleMessage method
-    public static final int DATA_MESSAGE_READ = 0x400 + 1;
-    public static final int DATA_SOCKET_HANDLE = 0x400 + 2;
-    public static final int MGMNT_MESSAGE_READ = 0x400 + 3;
-    public static final int MGMNT_SOCKET_HANDLE = 0x400 + 4;
-    public static final int MGMNT_SOCKET_PEER_ADDR = 0x400 + 5;
-    public static final int PROXY_DATA_MESSAGE_READ = 0x400 + 6;
-    public static final int PROXY_DATA_SOCKET_HANDLE = 0x400 + 7;
-    public static final int PROXY_MGMNT_MESSAGE_READ = 0x400 + 8;
-    public static final int PROXY_MGMNT_SOCKET_HANDLE = 0x400 + 9;
-
-    //Record specific constants
-    public static final String RECORD_TYPE = "tp";
-    public static final String RECORD_TYPE_DEVICE_INFO = "0";
-    public static final String RECORD_TYPE_LEGACY_AP = "1";
-    public static final String RECORD_LEVEL = "lvl";
-    public static final String RECORD_CAPACITY = "cap";
-    public static final String RECORD_CHARGING = "chrg";
-    public static final String RECORD_SSID = "ssid";
-    public static final String RECORD_KEY = "key";
-    public static final String RECORD_PROPOSED_IP = "pIP";
-    public static final String PASSWORD = "AllahAkbarAllahA";
 
     //Port parameters
     public static int mMgmntPort = 4546;
@@ -89,23 +64,11 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     public static int mProxyMgmntPort = 4544;
     public static int mProxyDataPort = 4543;
 
-    //Pref_Keys for port parameters
-    public static final String PREF_MGMNT_PORT = "group_management_port_text";
-    public static final String PREF_DATA_PORT = "group_data_port_text";
-    public static final String PREF_PROXY_MGMNT_PORT = "proxy_management_port_text";
-    public static final String PREF_PROXY_DATA_PORT = "proxy_data_port_text";
-
     //Ranking parameters
     public static float mRankAlpha = 0.34f;
     public static float mRankBeta = 0.33f;
     public static float mRankGamma = 0.33f;
     public static float mRankMaxCapacity = 4000.0f;
-
-    //Pref_Keys for ranking parameters
-    public static final String PREF_RANK_ALPHA = "rank_alpha_text";
-    public static final String PREF_RANK_BETA = "rank_beta_text";
-    public static final String PREF_RANK_GAMMA = "rank_gamma_text";
-    public static final String PREF_RANK_MAX_CAPACITY = "rank_max_capacity_text";
 
     //Protocol timing parameters
     public static int mSendMyInfPeriod = 2000;
@@ -117,17 +80,6 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     public static int mDecideProxyPeriod = 40000;
     public static int mSendNearbyLegacyApsInfoPeriod = 3000;
     public static int mSendTearDownPeriod = 300000;
-
-    //Pref_Keys for protocol timing parameters
-    public static final String PREF_SEND_MY_INF_PERIOD = "send_my_info_text";
-    public static final String PREF_SEND_PEERS_INFO_PERIOD = "send_peers_info_text";
-    public static final String PREF_DISCOVER_SERVICES_PERIOD = "discover_services_text";
-    public static final String PREF_ADD_SERVICES_PERIOD = "add_services_text";
-    public static final String PREF_DECLARE_GO_PERIOD = "declare_go_text";
-    public static final String PREF_DECIDE_GROUP_PERIOD = "decide_group_text";
-    public static final String PREF_DECIDE_PROXY_PERIOD = "decide_proxy_text";
-    public static final String PREF_SEND_NEARBY_LEGACY_APS_INFO_PERIOD = "send_nearby_legacy_aps_text";
-    public static final String PREF_SEND_TEAR_DOWN_PERIOD = "send_tear_down_text";
 
     public static WifiP2pInfo p2pInfo = null;
     public static WifiP2pGroup p2pGroup = null;
@@ -141,6 +93,44 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     private final SocketPeers groupSocketPeers = new SocketPeers();
     private final LegacyGroupsInfo legacyGroupsInfo = new LegacyGroupsInfo();
     private final HashMap<String, Map<String, String>> buddies = new HashMap<>();
+    private final PerformanceAnalysis performanceAnalysis = new PerformanceAnalysis();
+
+    public ThisDeviceState thisDeviceState = ThisDeviceState.STARTED;
+
+    public int myProposedIP = DiscoveryPeerInfo.generateProposedIP();
+
+    TextView txtLog;
+    EditText txtSend;
+    TextView txtReceived;
+
+    boolean requestRun = false;
+
+    Thread th1, th2;
+    Thread mgntHandler = null;
+    Thread dataHandler = null;
+    Thread proxyMgntHandler = null;
+    Thread proxyDataHandler = null;
+
+    private BatteryInformation batteryInfo = new BatteryInformation();
+    private WifiManager wifiManager;
+    private WifiBroadcastReceiver wifiBroadcastReceiver;
+    private WifiP2pManager wifiP2pManager;
+    private WifiP2pManager.Channel wifiP2pChannel;
+    private WiFiP2pBroadcastReceiver wifiP2pBroadcastReceiver;
+    private boolean isWifiP2pEnabled = false;
+
+    private WifiP2pDnsSdServiceRequest serviceRequest;
+    private WifiP2pDnsSdServiceInfo serviceDeviceInfo;
+    private WifiP2pDnsSdServiceInfo serviceInfoLegacyAp;
+
+    private SocketPeer proxySocketPeer = new SocketPeer();
+
+    private boolean lastWifiState = false;
+
+    private Timer sendMyInfoTimer = new Timer("sendMyInfoTimer");
+    private Timer sendPeersInfoTimer = new Timer("sendPeersInfoTimer");
+    private Timer discoverServicesTimer = new Timer("discoverServicesTimer");
+    private Timer addServicesTimer = new Timer("addServicesTimer");
 
     //Handlers
     private Handler handler = new Handler(this);
@@ -196,81 +186,6 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         }
     };
     //End of Runnables
-
-    public ThisDeviceState thisDeviceState = ThisDeviceState.STARTED;
-
-    public int myProposedIP = DiscoveryPeerInfo.generateProposedIP();
-
-    TextView txtLog;
-    EditText txtSend;
-    TextView txtReceived;
-
-    boolean requestRun = false;
-
-    Thread th1, th2;
-    Thread mgntHandler = null;
-    Thread dataHandler = null;
-    Thread proxyMgntHandler = null;
-    Thread proxyDataHandler = null;
-
-    private BatteryInformation batteryInfo = new BatteryInformation();
-    private WifiManager wifiManager;
-    private WifiBroadcastReceiver wifiBroadcastReceiver;
-    private WifiP2pManager wifiP2pManager;
-    private WifiP2pManager.Channel wifiP2pChannel;
-    private WiFiP2pBroadcastReceiver wifiP2pBroadcastReceiver;
-    private boolean isWifiP2pEnabled = false;
-
-    private WifiP2pDnsSdServiceRequest serviceRequest;
-    private WifiP2pDnsSdServiceInfo serviceDeviceInfo;
-    private WifiP2pDnsSdServiceInfo serviceInfoLegacyAp;
-
-    private SocketPeer proxySocketPeer = new SocketPeer();
-
-    private boolean lastWifiState = false;
-
-    private Timer sendMyInfoTimer = new Timer("sendMyInfoTimer");
-    private Timer sendPeersInfoTimer = new Timer("sendPeersInfoTimer");
-    private Timer discoverServicesTimer = new Timer("discoverServicesTimer");
-    private Timer addServicesTimer = new Timer("addServicesTimer");
-
-    //Taken from -> https://code.google.com/p/android-wifi-connecter/
-    public static String convertToQuotedString(String string) {
-        if (TextUtils.isEmpty(string)) {
-            return "";
-        }
-
-        final int lastPos = string.length() - 1;
-        if (lastPos > 0 && (string.charAt(0) == '"' && string.charAt(lastPos) == '"')) {
-            return string;
-        }
-
-        return "\"" + string + "\"";
-    }
-
-    public static String getWifiDirectIPAddress() {
-        // Adapted from
-        // http://stackoverflow.com/questions/6064510/how-to-get-ip-address-of-the-device/12449111#12449111
-        try {
-            for (Enumeration<NetworkInterface> en = NetworkInterface
-                    .getNetworkInterfaces(); en.hasMoreElements(); ) {
-                NetworkInterface intf = en.nextElement();
-                if (intf.getDisplayName().contains("p2p")) {
-                    for (Enumeration<InetAddress> enumIpAddr = intf
-                            .getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
-                        InetAddress inetAddress = enumIpAddr.nextElement();
-                        if (!inetAddress.isLoopbackAddress()
-                                && inetAddress instanceof Inet4Address) {
-                            return inetAddress.getHostAddress();
-                        }
-                    }
-                }
-            }
-        } catch (SocketException ex) {
-            ex.printStackTrace();
-        }
-        return null;
-    }
 
     public Handler getHandler() {
         return handler;
@@ -909,6 +824,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                                         discoveryPeersInfo.addOrUpdate(srcDevice.deviceAddress, rec);
                                 discoveryPeersInfo.addDevice(srcDevice);
 
+                                DiscoveryPeerInfo discoveryPeerInfo = discoveryPeersInfo.getPeerInfo(srcDevice.deviceAddress);
+
                                 //If I am in collecting device info phase I should check if my
                                 // proposed IP is conflicting with other devices or not.
                                 if (discoveryPeersInfo.isMyProposedIpConflicting(myProposedIP)) {
@@ -1378,6 +1295,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
         buddies.clear();
 
+        performanceAnalysis.reset();
+
         declareGoHandler.removeCallbacks(declareGoRunnable);
         decideGroupHandler.removeCallbacks(decideGroupRunnable);
         decideProxyHandler.removeCallbacks(decideProxyRunnable);
@@ -1435,10 +1354,10 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             discoverServicesTimer = new Timer("discoverServicesTimer");
             addServicesTimer = new Timer("addServicesTimer");
 
-            sendMyInfoTimer.schedule(new SendMyInfoTask(this), 0, mSendMyInfPeriod);
-            sendPeersInfoTimer.schedule(new SendPeersInfoTask(this), 0, mSendPeersInfoPeriod);
-            discoverServicesTimer.schedule(new DiscoverServicesTask(this), 0, mDiscoverServicesPeriod);
-            addServicesTimer.schedule(new AddServicesTask(this), 0, mAddServicesPeriod);
+            sendMyInfoTimer.schedule(new SendMyInfoTask(), 0, mSendMyInfPeriod);
+            sendPeersInfoTimer.schedule(new SendPeersInfoTask(), 0, mSendPeersInfoPeriod);
+            discoverServicesTimer.schedule(new DiscoverServicesTask(), 0, mDiscoverServicesPeriod);
+            addServicesTimer.schedule(new AddServicesTask(), 0, mAddServicesPeriod);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -1669,6 +1588,44 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         return ipAddress;
     }
 
+    //Taken from -> https://code.google.com/p/android-wifi-connecter/
+    public static String convertToQuotedString(String string) {
+        if (TextUtils.isEmpty(string)) {
+            return "";
+        }
+
+        final int lastPos = string.length() - 1;
+        if (lastPos > 0 && (string.charAt(0) == '"' && string.charAt(lastPos) == '"')) {
+            return string;
+        }
+
+        return "\"" + string + "\"";
+    }
+
+    public static String getWifiDirectIPAddress() {
+        // Adapted from
+        // http://stackoverflow.com/questions/6064510/how-to-get-ip-address-of-the-device/12449111#12449111
+        try {
+            for (Enumeration<NetworkInterface> en = NetworkInterface
+                    .getNetworkInterfaces(); en.hasMoreElements(); ) {
+                NetworkInterface intf = en.nextElement();
+                if (intf.getDisplayName().contains("p2p")) {
+                    for (Enumeration<InetAddress> enumIpAddr = intf
+                            .getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
+                        InetAddress inetAddress = enumIpAddr.nextElement();
+                        if (!inetAddress.isLoopbackAddress()
+                                && inetAddress instanceof Inet4Address) {
+                            return inetAddress.getHostAddress();
+                        }
+                    }
+                }
+            }
+        } catch (SocketException ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
     public void sendMyInfoToGOTask() {
         if (isWifiP2pEnabled) {
             if (p2pInfo != null) {
@@ -1799,57 +1756,31 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             }
         }
     }
-}
 
-
-class SendMyInfoTask extends TimerTask {
-    public EfficientWiFiP2pGroupsActivity activity = null;
-
-    SendMyInfoTask(EfficientWiFiP2pGroupsActivity activity) {
-        this.activity = activity;
+    class SendMyInfoTask extends TimerTask {
+        public void run() {
+            sendMyInfoToGOTask();
+        }
     }
 
-    public void run() {
-        if (activity != null)
-            activity.sendMyInfoToGOTask();
-    }
-}
-
-class SendPeersInfoTask extends TimerTask {
-    public EfficientWiFiP2pGroupsActivity activity = null;
-
-    SendPeersInfoTask(EfficientWiFiP2pGroupsActivity activity) {
-        this.activity = activity;
+    class SendPeersInfoTask extends TimerTask {
+        public void run() {
+            sendPeersInfoTask();
+        }
     }
 
-    public void run() {
-        if (activity != null)
-            activity.sendPeersInfoTask();
+    class DiscoverServicesTask extends TimerTask {
+        public void run() {
+            discoverServicesTask();
+        }
+    }
+
+    class AddServicesTask extends TimerTask {
+        public void run() {
+            addServicesTask();
+        }
     }
 }
 
-class DiscoverServicesTask extends TimerTask {
-    public EfficientWiFiP2pGroupsActivity activity = null;
 
-    DiscoverServicesTask(EfficientWiFiP2pGroupsActivity activity) {
-        this.activity = activity;
-    }
 
-    public void run() {
-        if (activity != null)
-            activity.discoverServicesTask();
-    }
-}
-
-class AddServicesTask extends TimerTask {
-    public EfficientWiFiP2pGroupsActivity activity = null;
-
-    AddServicesTask(EfficientWiFiP2pGroupsActivity activity) {
-        this.activity = activity;
-    }
-
-    public void run() {
-        if (activity != null)
-            activity.addServicesTask();
-    }
-}

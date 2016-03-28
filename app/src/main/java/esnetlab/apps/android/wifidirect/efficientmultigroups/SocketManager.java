@@ -11,7 +11,7 @@ import java.net.Socket;
 /**
  * Created by Ahmed on 4/8/2015.
  */
-public class SocketManager implements Runnable {
+public class SocketManager implements Runnable, ProtocolConstants {
 
     private static final String TAG = "SocketManager";
     public PeerConnectionListener pListner = null;
@@ -29,17 +29,17 @@ public class SocketManager implements Runnable {
         this.port = portUsed;
         //this.isDataSocket = isDataSocket;
         if (port == EfficientWiFiP2pGroupsActivity.mMgmntPort) {
-            whatHandle = EfficientWiFiP2pGroupsActivity.MGMNT_SOCKET_HANDLE;
-            whatRead = EfficientWiFiP2pGroupsActivity.MGMNT_MESSAGE_READ;
+            whatHandle = MGMNT_SOCKET_HANDLE;
+            whatRead = MGMNT_MESSAGE_READ;
         } else if (port == EfficientWiFiP2pGroupsActivity.mDataPort) {
-            whatHandle = EfficientWiFiP2pGroupsActivity.DATA_SOCKET_HANDLE;
-            whatRead = EfficientWiFiP2pGroupsActivity.DATA_MESSAGE_READ;
+            whatHandle = DATA_SOCKET_HANDLE;
+            whatRead = DATA_MESSAGE_READ;
         } else if (port == EfficientWiFiP2pGroupsActivity.mProxyMgmntPort) {
-            whatHandle = EfficientWiFiP2pGroupsActivity.PROXY_MGMNT_SOCKET_HANDLE;
-            whatRead = EfficientWiFiP2pGroupsActivity.PROXY_MGMNT_MESSAGE_READ;
+            whatHandle = PROXY_MGMNT_SOCKET_HANDLE;
+            whatRead = PROXY_MGMNT_MESSAGE_READ;
         } else if (port == EfficientWiFiP2pGroupsActivity.mProxyDataPort) {
-            whatHandle = EfficientWiFiP2pGroupsActivity.PROXY_DATA_SOCKET_HANDLE;
-            whatRead = EfficientWiFiP2pGroupsActivity.PROXY_DATA_MESSAGE_READ;
+            whatHandle = PROXY_DATA_SOCKET_HANDLE;
+            whatRead = PROXY_DATA_MESSAGE_READ;
         }
     }
 

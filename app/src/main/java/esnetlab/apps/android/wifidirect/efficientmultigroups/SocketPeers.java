@@ -32,7 +32,7 @@ public class SocketPeers {
         socketPeerList.add(socketPeer);
     }
 
-    public void addOrUpdatePeer(String peerStr) {
+    public SocketPeer addOrUpdatePeer(String peerStr) {
         String pInfo[] = peerStr.split(",");
         String peerName = pInfo[0];
         String peerMacAddress = pInfo[1];
@@ -48,6 +48,8 @@ public class SocketPeers {
             //update the existing peer
             nPeer.updatePeer(peerName, peerMacAddress, peerIpAddress, isGroupOwner);
         }
+
+        return nPeer;
     }
 
     public void removePeerByMacAddress(String peerMacAddress) {
