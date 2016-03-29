@@ -1,6 +1,13 @@
 package esnetlab.apps.android.wifidirect.efficientmultigroups;
 
+import android.os.Environment;
+import android.util.Log;
+
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -8,6 +15,7 @@ import java.util.Locale;
  * Created by Ahmed on 3/28/2016.
  */
 public class PerformanceAnalysis {
+    private static final String TAG = "PerformanceAnalysis";
     public final ArrayList<DiscoveryPeerStatistics> discoveryPeerStatisticsList = new ArrayList<>();
     public final ArrayList<SocketPeerStatistics> socketPeerStatisticsList = new ArrayList<>();
 
@@ -16,8 +24,9 @@ public class PerformanceAnalysis {
     public int sentDataSocketMessagesCount = 0;
     public int conflictIpCount = 0;
 
-    public void addDiscoveryStatistic(DiscoveryPeerInfo peerInfo, int length, boolean deviceInfo) {
-        DiscoveryPeerStatistics peerStatistics = getDiscoveryPeerStats(peerInfo);
+    //TODO: Add proxy mgmnt/data stats
+    public void addDiscoveryStatistic(String socketPeerMacAddr, int length, boolean deviceInfo) {
+        DiscoveryPeerStatistics peerStatistics = getDiscoveryPeerStats(socketPeerMacAddr);
 
         if (peerStatistics != null) {
             if (deviceInfo)
@@ -26,32 +35,33 @@ public class PerformanceAnalysis {
                 peerStatistics.legacyApMessageCounter.addLength(length);
         } else {
             peerStatistics = new DiscoveryPeerStatistics();
-            peerStatistics.discoveryPeerInfo = peerInfo;
+            peerStatistics.discoveryPeerMacAddr = socketPeerMacAddr;
             if (deviceInfo)
                 peerStatistics.deviceInfoMessageCounter.addLength(length);
             else
                 peerStatistics.legacyApMessageCounter.addLength(length);
+            discoveryPeerStatisticsList.add(peerStatistics);
         }
     }
 
-    public DiscoveryPeerStatistics getDiscoveryPeerStats(DiscoveryPeerInfo peerInfo) {
+    public DiscoveryPeerStatistics getDiscoveryPeerStats(String peerMacAddr) {
         DiscoveryPeerStatistics stat = null;
 
-        for (DiscoveryPeerStatistics peerStatistics :
-                discoveryPeerStatisticsList) {
-            if (peerInfo != null)
-                if (peerStatistics.discoveryPeerInfo != null)
-                    if (peerInfo.deviceId.equalsIgnoreCase(peerStatistics.discoveryPeerInfo.deviceId)) {
+        if (peerMacAddr != null)
+            for (DiscoveryPeerStatistics peerStatistics :
+                    discoveryPeerStatisticsList) {
+                if (peerStatistics.discoveryPeerMacAddr != null)
+                    if (peerMacAddr.equalsIgnoreCase(peerStatistics.discoveryPeerMacAddr)) {
                         stat = peerStatistics;
                         break;
                     }
-        }
+            }
 
         return stat;
     }
 
-    public void addSocketStatistic(SocketPeer peerInfo, int length, boolean management) {
-        SocketPeerStatistics peerStatistics = getSocketPeerStats(peerInfo);
+    public void addSocketStatistic(String discoveryPeerAddr, int length, boolean management) {
+        SocketPeerStatistics peerStatistics = getSocketPeerStats(discoveryPeerAddr);
 
         if (peerStatistics != null) {
             if (management)
@@ -60,31 +70,32 @@ public class PerformanceAnalysis {
                 peerStatistics.dataSocketMessageCounter.addLength(length);
         } else {
             peerStatistics = new SocketPeerStatistics();
-            peerStatistics.socketPeer = peerInfo;
+            peerStatistics.socketPeerAddr = discoveryPeerAddr;
             if (management)
                 peerStatistics.managementSocketMessageCounter.addLength(length);
             else
                 peerStatistics.dataSocketMessageCounter.addLength(length);
+            socketPeerStatisticsList.add(peerStatistics);
         }
     }
 
-    public SocketPeerStatistics getSocketPeerStats(SocketPeer peerInfo) {
+    public SocketPeerStatistics getSocketPeerStats(String peerAddr) {
         SocketPeerStatistics stat = null;
 
-        for (SocketPeerStatistics peerStatistics :
-                socketPeerStatisticsList) {
-            if (peerInfo != null)
-                if (peerStatistics.socketPeer != null)
-                    if (peerInfo.deviceAddress.equalsIgnoreCase(peerStatistics.socketPeer.deviceAddress)) {
+        if (peerAddr != null)
+            for (SocketPeerStatistics peerStatistics :
+                    socketPeerStatisticsList) {
+                if (peerStatistics.socketPeerAddr != null)
+                    if (peerAddr.equalsIgnoreCase(peerStatistics.socketPeerAddr)) {
                         stat = peerStatistics;
                         break;
                     }
-        }
+            }
 
         return stat;
     }
 
-    public String getStatistics() {
+    public String getStatistics(String thisDeviceMAC) {
         String str = "";
         String pStr = "";
 
@@ -95,8 +106,8 @@ public class PerformanceAnalysis {
 
 
         for (DiscoveryPeerStatistics peerStats : discoveryPeerStatisticsList) {
-            if (peerStats.discoveryPeerInfo != null) {
-                pStr += String.format(Locale.US, "****Discovery Stats for Device [%s]****\n", peerStats.discoveryPeerInfo.deviceId);
+            if (peerStats.discoveryPeerMacAddr != null) {
+                pStr += String.format(Locale.US, "****Discovery Stats for Device [%s]****\n", peerStats.discoveryPeerMacAddr);
                 pStr += String.format(Locale.US, "===DeviceInfo Msg Stats==\n%s", peerStats.deviceInfoMessageCounter.toString());
                 pStr += String.format(Locale.US, "===LegacyAp Msg Stats==\n%s", peerStats.legacyApMessageCounter.toString());
 
@@ -106,8 +117,8 @@ public class PerformanceAnalysis {
         }
 
         for (SocketPeerStatistics peerStats : socketPeerStatisticsList) {
-            if (peerStats.socketPeer != null) {
-                pStr += String.format(Locale.US, "****Socket Stats for Device [%s]****\n", peerStats.socketPeer.deviceAddress);
+            if (peerStats.socketPeerAddr != null) {
+                pStr += String.format(Locale.US, "****Socket Stats for Device [%s]****\n", peerStats.socketPeerAddr);
                 pStr += String.format(Locale.US, "===Management Stats==\n%s", peerStats.managementSocketMessageCounter.toString());
                 pStr += String.format(Locale.US, "===Data Stats==\n%s", peerStats.dataSocketMessageCounter.toString());
 
@@ -117,12 +128,12 @@ public class PerformanceAnalysis {
         }
 
         str += String.format(Locale.US,
-                "----------------My Statistics----------------\n" +
+                "----------------My Statistics [%s]----------------\n" +
                         "Total Service Discovery Requests: %d\n" +
-                        "Total Management Msg Sent: %d" +
-                        "Total Data Msg Sent: %d" +
-                        "Total IP Conflicts: %d" +
-                        "----------------------------------------------\n" +
+                        "Total Management Msg Sent: %d\n" +
+                        "Total Data Msg Sent: %d\n" +
+                        "Total IP Conflicts: %d\n" +
+                        "----------------------------------------------------------\n" +
                         "----------Peers Info---------------------\n" +
                         "Total Device Info Received: %d\n" +
                         "Total LegacyAp Received: %d\n" +
@@ -130,6 +141,7 @@ public class PerformanceAnalysis {
                         "Total Data Msg Received: %d\n" +
                         "%s" +
                         "-----------------------------------------\n"
+                , thisDeviceMAC
                 , sentServiceDiscoveryRequestCount
                 , sentManagementSocketMessagesCount
                 , sentDataSocketMessagesCount
@@ -141,6 +153,34 @@ public class PerformanceAnalysis {
                 , pStr);
 
         return str;
+    }
+
+    public void writeStatisticsToFile(String thisDeviceMAC) {
+        if (isExternalStorageWritable()) {
+            Date dt = Calendar.getInstance().getTime();
+            String stats = getStatistics(thisDeviceMAC);
+            File pFile;
+            FileOutputStream pOsFile;
+            String fileNameStart = "EMC_Stats_";
+            String sFileName = "/" + fileNameStart + dt.toString() + ".txt";
+            File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+
+            try {
+                pFile = new File(path, sFileName);
+                pOsFile = new FileOutputStream(pFile);
+                pOsFile.write(stats.getBytes());
+                pOsFile.flush();
+                pOsFile.close();
+            } catch (Exception ex) {
+                Log.d(TAG, "writeStatisticsToFile: Error writing file \n\t" + ex.toString());
+            }
+        }
+    }
+
+    /* Checks if external storage is available for read and write */
+    public boolean isExternalStorageWritable() {
+        String state = Environment.getExternalStorageState();
+        return Environment.MEDIA_MOUNTED.equals(state);
     }
 
     public void reset() {
@@ -157,13 +197,15 @@ public class PerformanceAnalysis {
 class DiscoveryPeerStatistics {
     public final MessageCounter deviceInfoMessageCounter = new MessageCounter();
     public final MessageCounter legacyApMessageCounter = new MessageCounter();
-    public DiscoveryPeerInfo discoveryPeerInfo = null;
+    //public DiscoveryPeerInfo discoveryPeerInfo = null;
+    public String discoveryPeerMacAddr = null;
 }
 
 class SocketPeerStatistics {
     public final MessageCounter managementSocketMessageCounter = new MessageCounter();
     public final MessageCounter dataSocketMessageCounter = new MessageCounter();
-    public SocketPeer socketPeer = null;
+    //public SocketPeer socketPeer = null;
+    public String socketPeerAddr = null;
 }
 
 class MessageCounter {

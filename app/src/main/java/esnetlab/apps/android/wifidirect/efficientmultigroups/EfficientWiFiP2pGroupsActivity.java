@@ -253,7 +253,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                 public void onClick(View v) {
                     String dataToSend = txtSend.getText().toString();
                     if (!dataToSend.equals("")) {
-                        groupSocketPeers.sendToAllDataSockets(dataToSend, MessageType.DATA_GM_TO_GROUP);
+                        int count = groupSocketPeers.sendToAllDataSockets(dataToSend, MessageType.DATA_GM_TO_GROUP);
+                        performanceAnalysis.sentDataSocketMessagesCount += count;
                         forwardIfMeIsProxy(dataToSend);
                         txtReceived.append("Data msg Sent -> [ME]: " + dataToSend + "\n");
                         txtSend.setText("");
@@ -283,7 +284,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             btnDiscoverPeers.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    discoverPeers();
+                    //discoverPeers();
+                    appendLogUiThread(performanceAnalysis.getStatistics(""));
                 }
             });
         }
@@ -823,12 +825,18 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                                 boolean groupInfoSeenBefore =
                                         discoveryPeersInfo.addOrUpdate(srcDevice.deviceAddress, rec);
                                 discoveryPeersInfo.addDevice(srcDevice);
-
-                                DiscoveryPeerInfo discoveryPeerInfo = discoveryPeersInfo.getPeerInfo(srcDevice.deviceAddress);
+                                //TODO: Fix the length
+                                int length = instanceName.length()
+                                        + registrationType.length()
+                                        + getRecLength(rec);
+                                performanceAnalysis.addDiscoveryStatistic(srcDevice.deviceAddress
+                                        , length
+                                        , isDeviceInfoRecord(rec));
 
                                 //If I am in collecting device info phase I should check if my
                                 // proposed IP is conflicting with other devices or not.
                                 if (discoveryPeersInfo.isMyProposedIpConflicting(myProposedIP)) {
+                                    performanceAnalysis.conflictIpCount++;
                                     myProposedIP = discoveryPeersInfo.getConflictFreeIP();
                                 }
 
@@ -844,6 +852,14 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                         } else {
                             appendLogUiThread("onDnsServiceAvailable -> unknown -> " + instanceName);
                         }
+                    }
+
+                    private int getRecLength(Map<String, String> rec) {
+                        int len = 0;
+                        for (String key : rec.keySet()) {
+                            len += key.length() + rec.get(key).length();
+                        }
+                        return len;
                     }
                 };
 
@@ -900,8 +916,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     private synchronized void checkForDiscoveredGroups(Map<String, String> record) {
         if (thisDeviceState == ThisDeviceState.COLLECTING_DEVICE_INFO
                 || thisDeviceState == ThisDeviceState.GM_SELECTING_GO)
-            if (record.containsKey(RECORD_KEY))
-                if (record.get(RECORD_TYPE).equals(RECORD_TYPE_LEGACY_AP)) {
+            if (isLegacyApRecord(record))
+                if (record.containsKey(RECORD_KEY)) {
                     String ssid = record.get(RECORD_SSID);
                     String key = record.get(RECORD_KEY);
 
@@ -911,6 +927,22 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                         declareGM();
                     }
                 }
+    }
+
+    private boolean isLegacyApRecord(Map<String, String> record) {
+        if (record.containsKey(RECORD_TYPE))
+            if (record.get(RECORD_TYPE).equals(RECORD_TYPE_LEGACY_AP)) {
+                return true;
+            }
+        return false;
+    }
+
+    private boolean isDeviceInfoRecord(Map<String, String> record){
+        if (record.containsKey(RECORD_TYPE))
+            if (record.get(RECORD_TYPE).equals(RECORD_TYPE_DEVICE_INFO)) {
+                return true;
+            }
+        return false;
     }
 
     private void connectIfLegacyApRecordFound(Map<String, String> record) {
@@ -1387,13 +1419,21 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     public boolean handleMessage(Message msg) {
         switch (msg.what) {
             case DATA_MESSAGE_READ:
+                SocketManager sm = ((BufferSocket) msg.obj).socketManager;
                 byte[] readBuf = ((BufferSocket) msg.obj).buffer;
                 // construct a string from the valid bytes in the buffer
                 String readMessage = new String(readBuf, 0, msg.arg1);
+                //Logging stats
+                SocketPeer peer = groupSocketPeers.getPeerFromSocketManager(sm);
+                if(peer != null) {
+                    performanceAnalysis.addSocketStatistic(peer.deviceAddress + "," + peer.ipAddress
+                            , readMessage.length(), false);
+                }
+
                 MessageTypeData msgTypeData = MessageHelper.getMessageTypeAndData(readMessage);
                 if (msgTypeData != null) {
                     if (msgTypeData.messageType == MessageType.DATA_GM_TO_GROUP) {
-                        String peerName = groupSocketPeers.getPeerNameFromSocketManager(((BufferSocket) msg.obj).socketManager);
+                        String peerName = groupSocketPeers.getPeerNameFromSocketManager(sm);
                         appendLogReceived("[" + peerName + "]: " + msgTypeData.messageData);
                         //Forward data if me is a proxy
                         forwardIfMeIsProxy(msgTypeData.messageData);
@@ -1407,7 +1447,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                 break;
 
             case DATA_SOCKET_HANDLE:
-                SocketManager sm = (SocketManager) msg.obj;
+                sm = (SocketManager) msg.obj;
                 groupSocketPeers.addDataSocketManagerToPeer(sm);
                 appendLog("New DataSocketHandle received -> " + sm.getSocket().getInetAddress().toString());
                 appendLog("No of peers so far = " + groupSocketPeers.getPeers().size());
@@ -1417,7 +1457,15 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                 readBuf = ((BufferSocket) msg.obj).buffer;
                 readMessage = new String(readBuf, 0, msg.arg1);
                 appendLog("Management msg read: " + readMessage);
-                processManagementMessage(readMessage, ((BufferSocket) msg.obj).socketManager);
+                sm = ((BufferSocket) msg.obj).socketManager;
+                //Logging stats
+                peer = groupSocketPeers.getPeerFromSocketManager(sm);
+                if(peer != null) {
+                    performanceAnalysis.addSocketStatistic(peer.deviceAddress + "," + peer.ipAddress
+                            , readMessage.length(), true);
+                }
+
+                processManagementMessage(readMessage, sm);
                 break;
 
             case MGMNT_SOCKET_HANDLE:
@@ -1457,7 +1505,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                 readBuf = ((BufferSocket) msg.obj).buffer;
                 readMessage = new String(readBuf, 0, msg.arg1);
                 appendLog("Management msg read: " + readMessage);
-                processManagementMessage(readMessage, ((BufferSocket) msg.obj).socketManager);
+                sm = ((BufferSocket) msg.obj).socketManager;
+                processManagementMessage(readMessage, sm);
                 break;
 
             case PROXY_MGMNT_SOCKET_HANDLE:
@@ -1637,6 +1686,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                         } else if (size == 1) {
                             String pLst = getMyInfo();
                             groupSocketPeers.sendToAllManagmentSockets(pLst, MessageType.MGMNT_KEEP_ALIVE);
+                            performanceAnalysis.sentManagementSocketMessagesCount++;
                             appendLogUiThread("sendMyInfoToGOTask: sent -> " + pLst);
                         } else if (size > 1) {
                             appendLogUiThread("Error!!! can't have more than one management socket");
@@ -1657,7 +1707,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                         String pLst = groupSocketPeers.toString();
                         if (pLst.equals("")) pLst = getMyInfo();
                         else pLst += ";" + getMyInfo();
-                        groupSocketPeers.sendToAllManagmentSockets(pLst, MessageType.MGMNT_KEEP_ALIVE);
+                        int count = groupSocketPeers.sendToAllManagmentSockets(pLst, MessageType.MGMNT_KEEP_ALIVE);
+                        performanceAnalysis.sentManagementSocketMessagesCount += count;
                         appendLogUiThread("sendPeersInfoTask: Sent -> " + pLst + " To "
                                 + groupSocketPeers.getOpenManagementSockets().size() + " Peers");
                     }
@@ -1699,6 +1750,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                     || thisDeviceState == ThisDeviceState.GM_SELECTING_GO
                     /*|| thisDeviceState == ThisDeviceState.GO_SENDING_LEGACY_INFO*/) {
                 discoverServices();
+                performanceAnalysis.sentServiceDiscoveryRequestCount++;
             }
         }
     }

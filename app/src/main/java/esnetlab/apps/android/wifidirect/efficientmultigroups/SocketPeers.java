@@ -294,16 +294,22 @@ public class SocketPeers {
         return socketManagerList;
     }
 
-    public void sendToAllDataSockets(String dataToSend, MessageType messageType) {
+    public int sendToAllDataSockets(String dataToSend, MessageType messageType) {
+        int smCount = 0;
         for (SocketManager socketManager : getOpenDataSockets()) {
             socketManager.writeFormattedMessage(dataToSend, messageType);
+            smCount++;
         }
+        return smCount;
     }
 
-    public void sendToAllManagmentSockets(String dataToSend, MessageType messageType) {
+    public int sendToAllManagmentSockets(String dataToSend, MessageType messageType) {
+        int smCount = 0;
         for (SocketManager socketManager : getOpenManagementSockets()) {
             socketManager.writeFormattedMessage(dataToSend, messageType);
+            smCount++;
         }
+        return smCount;
     }
 
     public void sendToAllProxyDataSockets(String dataToSend, MessageType messageType) {
