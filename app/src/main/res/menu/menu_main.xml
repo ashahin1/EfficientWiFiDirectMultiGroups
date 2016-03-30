@@ -4,19 +4,20 @@
     tools:context=".MainActivity">
     <item
         android:id="@+id/action_toggle_wifi"
-        android:title="@string/action_toggle_wifi"
-        android:orderInCategory="10"
         android:icon="@drawable/ic_action_toggle_wifi"
+        android:orderInCategory="10"
+        android:title="@string/action_toggle_wifi"
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/action_clear_log"
-        android:title="@string/action_clear_log"
-        android:orderInCategory="20"
         android:icon="@drawable/ic_action_clear_log"
+        android:orderInCategory="20"
+        android:title="@string/action_clear_log"
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/action_settings"
-        android:title="@string/action_settings"
+        android:icon="@drawable/ic_action_settings"
         android:orderInCategory="100"
-        app:showAsAction="never" />
+        android:title="@string/action_settings"
+        app:showAsAction="ifRoom" />
 </menu>

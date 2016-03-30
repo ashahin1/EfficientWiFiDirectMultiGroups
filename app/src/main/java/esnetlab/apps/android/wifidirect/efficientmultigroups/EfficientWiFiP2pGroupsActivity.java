@@ -25,10 +25,13 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
@@ -234,6 +237,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     }
 
     private void setupControls() {
+
         txtLog = (TextView) findViewById(R.id.txt_log);
         txtSend = (EditText) findViewById(R.id.txt_send);
         txtReceived = (TextView) findViewById(R.id.txt_received);
@@ -262,57 +266,13 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                     }
                 }
             });
+            //registerForContextMenu(btnSend);
         }
 
-        final Button btnCreateGroup = (Button) findViewById(R.id.btn_create_group);
-        if (btnCreateGroup != null) {
-            btnCreateGroup.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (checkGroupFormedByMe()) {
-                        removeWiFiP2pGroup(true);
-                        btnCreateGroup.setText("Create\nGroup");
-                    } else {
-                        createWifiP2pGroup();
-                        btnCreateGroup.setText("Remove\nGroup");
-                    }
-                }
-            });
-        }
-        final Button btnDiscoverPeers = (Button) findViewById(R.id.btn_discover_peers);
-        if (btnDiscoverPeers != null) {
-            btnDiscoverPeers.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    //discoverPeers();
-                    appendLogUiThread(performanceAnalysis.getStatistics(""));
-                }
-            });
-        }
+        final FloatingActionButton btnFab = (FloatingActionButton) findViewById(R.id.fab);
+        registerForContextMenu(btnFab);
 
-        final Button btnCreateService = (Button) findViewById(R.id.btn_create_service);
-        if (btnCreateService != null) {
-            btnCreateService.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    removeDeviceInfoService();
-                    sleep(1000);
-                    createDeviceInfoService();
-                }
-            });
-        }
-
-        final Button btnListServices = (Button) findViewById(R.id.btn_list_services);
-        if (btnListServices != null) {
-            btnListServices.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    stopDiscoveringServices();
-                    sleep(1000);
-                    discoverServices();
-                }
-            });
-        }
+        //btnFab.createContextMenu();
     }
 
     private void setupNetworking() {
@@ -335,6 +295,45 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         wifiManager.setWifiEnabled(true);
         //Clean the WiFi configured networks
         removeConfiguredLegacyAPs("++++++++++++");
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v,
+                                    ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.fab_menu, menu);
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_create_group:
+                if (checkGroupFormedByMe()) {
+                    removeWiFiP2pGroup(true);
+                    item.setTitle("Create Group");
+                } else {
+                    createWifiP2pGroup();
+                    item.setTitle("Remove Group");
+                }
+                return true;
+            case R.id.action_discover_peers:
+                //discoverPeers();
+                appendLogUiThread(performanceAnalysis.getStatistics(""));
+                return true;
+            case R.id.action_create_service:
+                removeDeviceInfoService();
+                sleep(1000);
+                createDeviceInfoService();
+                return true;
+            case R.id.action_list_services:
+                stopDiscoveringServices();
+                sleep(1000);
+                discoverServices();
+                return true;
+            default:
+                return super.onContextItemSelected(item);
+        }
     }
 
     @Override

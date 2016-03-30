@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/action_create_group"
+        android:icon="@drawable/ic_action_create_group"
+        android:orderInCategory="1"
+        android:title="@string/action_create_group" />
+    <item
+        android:id="@+id/action_discover_peers"
+        android:icon="@drawable/ic_action_discover_peers"
+        android:orderInCategory="2"
+        android:title="@string/action_discover_peers" />
+    <item
+        android:id="@+id/action_create_service"
+        android:icon="@drawable/ic_action_create_service"
+        android:orderInCategory="1"
+        android:title="@string/action_create_service" />
+    <item
+        android:id="@+id/action_list_services"
+        android:icon="@drawable/ic_action_list_services"
+        android:orderInCategory="2"
+        android:title="@string/action_list_services" />
+</menu>
