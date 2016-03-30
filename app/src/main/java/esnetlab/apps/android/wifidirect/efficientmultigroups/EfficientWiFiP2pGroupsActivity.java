@@ -27,7 +27,6 @@ import android.os.Message;
 import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
@@ -42,14 +41,10 @@ import android.widget.Toast;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.ByteOrder;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -270,9 +265,16 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         }
 
         final FloatingActionButton btnFab = (FloatingActionButton) findViewById(R.id.fab);
-        registerForContextMenu(btnFab);
 
-        //btnFab.createContextMenu();
+        if (btnFab != null) {
+            registerForContextMenu(btnFab);
+            btnFab.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    openContextMenu(btnFab);
+                }
+            });
+        }
     }
 
     private void setupNetworking() {
@@ -936,7 +938,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         return false;
     }
 
-    private boolean isDeviceInfoRecord(Map<String, String> record){
+    private boolean isDeviceInfoRecord(Map<String, String> record) {
         if (record.containsKey(RECORD_TYPE))
             if (record.get(RECORD_TYPE).equals(RECORD_TYPE_DEVICE_INFO)) {
                 return true;
@@ -1034,9 +1036,9 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         WifiConfiguration wifiConfiguration = new WifiConfiguration();
         wifiConfiguration.networkId = -100;
         wifiConfiguration.BSSID = BSSID;
-        wifiConfiguration.SSID = convertToQuotedString(SSID);
+        wifiConfiguration.SSID = Utilities.convertToQuotedString(SSID);
         wifiConfiguration.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
-        wifiConfiguration.preSharedKey = convertToQuotedString(passPhrase);
+        wifiConfiguration.preSharedKey = Utilities.convertToQuotedString(passPhrase);
         wifiConfiguration.priority = 1;
 
         sleep(500);
@@ -1424,8 +1426,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                 String readMessage = new String(readBuf, 0, msg.arg1);
                 //Logging stats
                 SocketPeer peer = groupSocketPeers.getPeerFromSocketManager(sm);
-                if(peer != null) {
-                    performanceAnalysis.addSocketStatistic(peer.deviceAddress + "," + peer.ipAddress
+                if (peer != null) {
+                    performanceAnalysis.addSocketStatistic(peer.deviceAddress, peer.ipAddress
                             , readMessage.length(), false);
                 }
 
@@ -1459,8 +1461,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                 sm = ((BufferSocket) msg.obj).socketManager;
                 //Logging stats
                 peer = groupSocketPeers.getPeerFromSocketManager(sm);
-                if(peer != null) {
-                    performanceAnalysis.addSocketStatistic(peer.deviceAddress + "," + peer.ipAddress
+                if (peer != null) {
+                    performanceAnalysis.addSocketStatistic(peer.deviceAddress, peer.ipAddress
                             , readMessage.length(), true);
                 }
 
@@ -1636,44 +1638,6 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         return ipAddress;
     }
 
-    //Taken from -> https://code.google.com/p/android-wifi-connecter/
-    public static String convertToQuotedString(String string) {
-        if (TextUtils.isEmpty(string)) {
-            return "";
-        }
-
-        final int lastPos = string.length() - 1;
-        if (lastPos > 0 && (string.charAt(0) == '"' && string.charAt(lastPos) == '"')) {
-            return string;
-        }
-
-        return "\"" + string + "\"";
-    }
-
-    public static String getWifiDirectIPAddress() {
-        // Adapted from
-        // http://stackoverflow.com/questions/6064510/how-to-get-ip-address-of-the-device/12449111#12449111
-        try {
-            for (Enumeration<NetworkInterface> en = NetworkInterface
-                    .getNetworkInterfaces(); en.hasMoreElements(); ) {
-                NetworkInterface intf = en.nextElement();
-                if (intf.getDisplayName().contains("p2p")) {
-                    for (Enumeration<InetAddress> enumIpAddr = intf
-                            .getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
-                        InetAddress inetAddress = enumIpAddr.nextElement();
-                        if (!inetAddress.isLoopbackAddress()
-                                && inetAddress instanceof Inet4Address) {
-                            return inetAddress.getHostAddress();
-                        }
-                    }
-                }
-            }
-        } catch (SocketException ex) {
-            ex.printStackTrace();
-        }
-        return null;
-    }
-
     public void sendMyInfoToGOTask() {
         if (isWifiP2pEnabled) {
             if (p2pInfo != null) {
@@ -1722,7 +1686,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         if (p2pDevice != null) {
             str = p2pDevice.deviceName + ","
                     + p2pDevice.deviceAddress + ","
-                    + getWifiDirectIPAddress() + ","
+                    + Utilities.getWifiDirectIPAddress() + ","
                     + (p2pDevice.isGroupOwner() ? "1" : "0")
             ;
         }

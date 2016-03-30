@@ -104,7 +104,7 @@ public class SocketPeers {
         String ip0s[], ip1s[];
         int octet0, octet1;
 
-        ip0 = EfficientWiFiP2pGroupsActivity.getWifiDirectIPAddress();
+        ip0 = Utilities.getWifiDirectIPAddress();
         if (ip0 != null) {
             ip0s = ip0.split("\\.");
             octet0 = Integer.valueOf(ip0s[3]);

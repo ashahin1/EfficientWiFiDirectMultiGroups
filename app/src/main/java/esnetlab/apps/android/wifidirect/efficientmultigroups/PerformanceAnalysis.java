@@ -25,8 +25,8 @@ public class PerformanceAnalysis {
     public int conflictIpCount = 0;
 
     //TODO: Add proxy mgmnt/data stats
-    public void addDiscoveryStatistic(String socketPeerMacAddr, int length, boolean deviceInfo) {
-        DiscoveryPeerStatistics peerStatistics = getDiscoveryPeerStats(socketPeerMacAddr);
+    public void addDiscoveryStatistic(String discoveryPeerMacAddr, int length, boolean deviceInfo) {
+        DiscoveryPeerStatistics peerStatistics = getDiscoveryPeerStats(discoveryPeerMacAddr);
 
         if (peerStatistics != null) {
             if (deviceInfo)
@@ -35,7 +35,7 @@ public class PerformanceAnalysis {
                 peerStatistics.legacyApMessageCounter.addLength(length);
         } else {
             peerStatistics = new DiscoveryPeerStatistics();
-            peerStatistics.discoveryPeerMacAddr = socketPeerMacAddr;
+            peerStatistics.discoveryPeerMacAddr = discoveryPeerMacAddr;
             if (deviceInfo)
                 peerStatistics.deviceInfoMessageCounter.addLength(length);
             else
@@ -60,17 +60,22 @@ public class PerformanceAnalysis {
         return stat;
     }
 
-    public void addSocketStatistic(String discoveryPeerAddr, int length, boolean management) {
-        SocketPeerStatistics peerStatistics = getSocketPeerStats(discoveryPeerAddr);
+    public void addSocketStatistic(String socketPeerMacAddr, String socketPeerIpAddr, int length, boolean management) {
+        SocketPeerStatistics peerStatistics = getSocketPeerStats(socketPeerIpAddr);
 
         if (peerStatistics != null) {
+            if (!Utilities.isValidMacAddr(peerStatistics.socketPeerMacAddr))
+                peerStatistics.socketPeerMacAddr = socketPeerMacAddr;
+
             if (management)
                 peerStatistics.managementSocketMessageCounter.addLength(length);
             else
                 peerStatistics.dataSocketMessageCounter.addLength(length);
         } else {
             peerStatistics = new SocketPeerStatistics();
-            peerStatistics.socketPeerAddr = discoveryPeerAddr;
+            peerStatistics.socketPeerIpAddr = socketPeerIpAddr;
+            peerStatistics.socketPeerMacAddr = socketPeerMacAddr;
+
             if (management)
                 peerStatistics.managementSocketMessageCounter.addLength(length);
             else
@@ -85,8 +90,8 @@ public class PerformanceAnalysis {
         if (peerAddr != null)
             for (SocketPeerStatistics peerStatistics :
                     socketPeerStatisticsList) {
-                if (peerStatistics.socketPeerAddr != null)
-                    if (peerAddr.equalsIgnoreCase(peerStatistics.socketPeerAddr)) {
+                if (peerStatistics.socketPeerIpAddr != null)
+                    if (peerAddr.equalsIgnoreCase(peerStatistics.socketPeerIpAddr)) {
                         stat = peerStatistics;
                         break;
                     }
@@ -117,8 +122,8 @@ public class PerformanceAnalysis {
         }
 
         for (SocketPeerStatistics peerStats : socketPeerStatisticsList) {
-            if (peerStats.socketPeerAddr != null) {
-                pStr += String.format(Locale.US, "****Socket Stats for Device [%s]****\n", peerStats.socketPeerAddr);
+            if (peerStats.socketPeerIpAddr != null) {
+                pStr += String.format(Locale.US, "****Socket Stats for Device [%s,%s]****\n", peerStats.socketPeerMacAddr, peerStats.socketPeerIpAddr);
                 pStr += String.format(Locale.US, "===Management Stats==\n%s", peerStats.managementSocketMessageCounter.toString());
                 pStr += String.format(Locale.US, "===Data Stats==\n%s", peerStats.dataSocketMessageCounter.toString());
 
@@ -205,7 +210,8 @@ class SocketPeerStatistics {
     public final MessageCounter managementSocketMessageCounter = new MessageCounter();
     public final MessageCounter dataSocketMessageCounter = new MessageCounter();
     //public SocketPeer socketPeer = null;
-    public String socketPeerAddr = null;
+    public String socketPeerIpAddr = null;
+    public String socketPeerMacAddr = null;
 }
 
 class MessageCounter {
