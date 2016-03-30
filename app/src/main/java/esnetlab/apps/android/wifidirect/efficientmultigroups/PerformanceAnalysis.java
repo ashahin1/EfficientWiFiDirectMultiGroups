@@ -15,7 +15,6 @@ import java.util.Locale;
  * Created by Ahmed on 3/28/2016.
  */
 public class PerformanceAnalysis {
-    private static final String TAG = "PerformanceAnalysis";
     public final ArrayList<DiscoveryPeerStatistics> discoveryPeerStatisticsList = new ArrayList<>();
     public final ArrayList<SocketPeerStatistics> socketPeerStatisticsList = new ArrayList<>();
 
@@ -158,34 +157,6 @@ public class PerformanceAnalysis {
                 , pStr);
 
         return str;
-    }
-
-    public void writeStatisticsToFile(String thisDeviceMAC) {
-        if (isExternalStorageWritable()) {
-            Date dt = Calendar.getInstance().getTime();
-            String stats = getStatistics(thisDeviceMAC);
-            File pFile;
-            FileOutputStream pOsFile;
-            String fileNameStart = "EMC_Stats_";
-            String sFileName = "/" + fileNameStart + dt.toString() + ".txt";
-            File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-
-            try {
-                pFile = new File(path, sFileName);
-                pOsFile = new FileOutputStream(pFile);
-                pOsFile.write(stats.getBytes());
-                pOsFile.flush();
-                pOsFile.close();
-            } catch (Exception ex) {
-                Log.d(TAG, "writeStatisticsToFile: Error writing file \n\t" + ex.toString());
-            }
-        }
-    }
-
-    /* Checks if external storage is available for read and write */
-    public boolean isExternalStorageWritable() {
-        String state = Environment.getExternalStorageState();
-        return Environment.MEDIA_MOUNTED.equals(state);
     }
 
     public void reset() {

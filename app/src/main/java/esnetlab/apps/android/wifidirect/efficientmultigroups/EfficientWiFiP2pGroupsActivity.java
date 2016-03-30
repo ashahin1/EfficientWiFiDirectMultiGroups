@@ -1,10 +1,12 @@
 package esnetlab.apps.android.wifidirect.efficientmultigroups;
 
+import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.DhcpInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SupplicantState;
@@ -26,6 +28,8 @@ import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -55,6 +59,7 @@ import java.util.TimerTask;
 public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements WifiP2pManager.ConnectionInfoListener, Handler.Callback, MessageTarget, ProtocolConstants {
 
     public static final String TAG = "EfficientWiFiP2pGroups";
+    private static final int REQUEST_WRITE_STORAGE = 112;
 
     //Port parameters
     public static int mMgmntPort = 4546;
@@ -204,6 +209,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         thisDeviceState = ThisDeviceState.STARTED;
         setupNetworking();
         setupControls();
+        askForWritingPermission();
     }
 
     private void setupPreferences() {
@@ -297,6 +303,32 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         wifiManager.setWifiEnabled(true);
         //Clean the WiFi configured networks
         removeConfiguredLegacyAPs("++++++++++++");
+    }
+
+
+    private void askForWritingPermission() {
+        boolean hasPermission = (ContextCompat.checkSelfPermission(getApplicationContext(),
+                Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
+        if (!hasPermission) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    REQUEST_WRITE_STORAGE);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case REQUEST_WRITE_STORAGE: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                } else {
+                    Toast.makeText(this, "The app was not allowed to write to your storage. Hence, it cannot function properly. Please consider granting it this permission", Toast.LENGTH_LONG).show();
+                }
+            }
+        }
+
     }
 
     @Override
@@ -403,6 +435,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             toggleWiFi();
         } else if (id == R.id.action_clear_log) {
             txtLog.setText("");
+        }else if(id == R.id.action_save_log){
+            Utilities.writeStringToFile(txtLog.getText().toString(), "EMC_log_");
         }
 
         return super.onOptionsItemSelected(item);
@@ -721,6 +755,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         record.put(RECORD_CHARGING, Boolean.toString(batteryInfo.isCharging));
         record.put(RECORD_PROPOSED_IP, Integer.toString(myProposedIP));
 
+        appendLogUiThread("My Proposed IP address is ["+myProposedIP+"]");
+
         serviceDeviceInfo =
                 WifiP2pDnsSdServiceInfo.newInstance(SERVICE_INSTANCE, SERVICE_REG_TYPE, record);
         wifiP2pManager.addLocalService(wifiP2pChannel, serviceDeviceInfo, new WifiP2pManager.ActionListener() {
@@ -838,6 +874,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                                 // proposed IP is conflicting with other devices or not.
                                 if (discoveryPeersInfo.isMyProposedIpConflicting(myProposedIP)) {
                                     performanceAnalysis.conflictIpCount++;
+                                    appendLogUiThread("My Proposed IP ["+myProposedIP+"] is conflicting, trying a new one");
                                     myProposedIP = discoveryPeersInfo.getConflictFreeIP();
                                 }
 

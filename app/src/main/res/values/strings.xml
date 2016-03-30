@@ -9,6 +9,8 @@
     <string name="action_discover_peers">Discover Peers</string>
     <string name="action_create_service">Create Service</string>
     <string name="action_list_services">List Services</string>
+    <string name="btn_send">Send</string>
+    <string name="action_save_log">Save Log to File</string>
     <string name="title_activity_settings">Settings</string>
 
     <!-- Strings related to Settings -->
@@ -69,6 +71,5 @@
     <integer name="pref_default_proxy_management_port">4544</integer>
 
     <string name="pref_title_proxy_data_port">Proxy Data Port</string>
-    <string name="btn_send">Send</string>
     <integer name="pref_default_proxy_data_port">4543</integer>
 </resources>
