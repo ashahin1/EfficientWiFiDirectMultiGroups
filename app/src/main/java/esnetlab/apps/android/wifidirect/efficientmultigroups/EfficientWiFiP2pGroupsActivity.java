@@ -259,15 +259,18 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                     String dataToSend = txtSend.getText().toString();
                     if (!dataToSend.equals("")) {
                         int count = groupSocketPeers.sendToAllDataSockets(dataToSend, MessageType.DATA_GM_TO_GROUP);
-                        performanceAnalysis.sentDataSocketMessagesCount += count;
-                        forwardIfMeIsProxy(dataToSend);
-                        txtReceived.append("Data msg Sent -> [ME]: " + dataToSend + "\n");
-                        txtSend.setText("");
-                        txtSend.clearFocus();
+                        if (count > 0) {
+                            performanceAnalysis.sentDataSocketMessagesCount += count;
+                            forwardIfMeIsProxy(dataToSend);
+                            txtReceived.append("Data msg Sent -> [ME]: " + dataToSend + "\n");
+                            txtSend.setText("");
+                            txtSend.clearFocus();
+                        } else {
+                            Toast.makeText(v.getContext(), "Not connected to any peers!", Toast.LENGTH_SHORT).show();
+                        }
                     }
                 }
             });
-            //registerForContextMenu(btnSend);
         }
 
         final FloatingActionButton btnFab = (FloatingActionButton) findViewById(R.id.fab);
@@ -435,8 +438,12 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             toggleWiFi();
         } else if (id == R.id.action_clear_log) {
             txtLog.setText("");
-        }else if(id == R.id.action_save_log){
-            Utilities.writeStringToFile(txtLog.getText().toString(), "EMC_log_");
+        } else if (id == R.id.action_save_log) {
+            if (Utilities.writeStringToFile(txtLog.getText().toString(), "EMC_log_")) {
+                Toast.makeText(this, "Log saved successfully", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Log failed to save", Toast.LENGTH_SHORT).show();
+            }
         }
 
         return super.onOptionsItemSelected(item);
@@ -754,8 +761,6 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         record.put(RECORD_CAPACITY, Integer.toString(batteryInfo.capacity));
         record.put(RECORD_CHARGING, Boolean.toString(batteryInfo.isCharging));
         record.put(RECORD_PROPOSED_IP, Integer.toString(myProposedIP));
-
-        appendLogUiThread("My Proposed IP address is ["+myProposedIP+"]");
 
         serviceDeviceInfo =
                 WifiP2pDnsSdServiceInfo.newInstance(SERVICE_INSTANCE, SERVICE_REG_TYPE, record);
@@ -1414,6 +1419,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
             startTimers();
             createDeviceInfoService();
+            appendLogUiThread("My Proposed IP address is ["+myProposedIP+"]");
         }
     }
 

@@ -27,7 +27,6 @@ public class Utilities {
             "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$");
 
 
-
     public static boolean isValidIPv4Addr(final String ip) {
         return IPV4_ADDR_PATTERN.matcher(ip).matches();
     }
@@ -74,15 +73,17 @@ public class Utilities {
         return "\"" + string + "\"";
     }
 
-    public static void writeStringToFile(String contents, String fileNameStart) {
+    public static boolean writeStringToFile(String contents, String fileNameStart) {
         if (isExternalStorageWritable()) {
             Date dt = Calendar.getInstance().getTime();
             File pFile;
             FileOutputStream pOsFile;
             String sFileName = "/" + fileNameStart + dt.getTime() + ".txt";
-            File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-
+            File path = Environment.getExternalStorageDirectory();
+            path = new File(path.getAbsolutePath(), "/EMC");
             try {
+                if (!path.exists())
+                    path.mkdir();
                 pFile = new File(path, sFileName);
                 pOsFile = new FileOutputStream(pFile);
                 pOsFile.write(contents.getBytes());
@@ -90,8 +91,10 @@ public class Utilities {
                 pOsFile.close();
             } catch (Exception ex) {
                 Log.d(TAG, "writeStringToFile: Error writing file \n\t" + ex.toString());
+                return false;
             }
         }
+        return true;
     }
 
     /* Checks if external storage is available for read and write */
