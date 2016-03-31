@@ -51,7 +51,7 @@
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
                 android:layout_weight="0.6"
-                card_view:cardElevation="20dp">
+                card_view:cardElevation="2dp">
 
                 <ScrollView
                     android:id="@+id/textAreaScroller1"
@@ -76,7 +76,7 @@
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
                 android:layout_weight="0.4"
-                card_view:cardElevation="20dp">
+                card_view:cardElevation="2dp">
 
                 <ScrollView
                     android:id="@+id/textAreaScroller2"
