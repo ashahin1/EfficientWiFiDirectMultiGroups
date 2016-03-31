@@ -111,11 +111,11 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     private int runNumber = 1;
 
 
-    Thread th1, th2;
-    Thread mgntHandler = null;
-    Thread dataHandler = null;
-    Thread proxyMgntHandler = null;
-    Thread proxyDataHandler = null;
+    private Thread th1, th2;
+    private Thread mgntHandler = null;
+    private Thread dataHandler = null;
+    private Thread proxyMgntHandler = null;
+    private Thread proxyDataHandler = null;
 
     private BatteryInformation batteryInfo = new BatteryInformation();
     private WifiManager wifiManager;
@@ -581,7 +581,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     public boolean connectDataAsServer() {
         try {
             if (dataHandler == null) {
-                dataHandler = new GroupDataSocketHandler(this.getHandler());
+                dataHandler = new SocketHandler(this.getHandler(), mDataPort);
                 dataHandler.start();
             } else if (!dataHandler.isAlive())
                 dataHandler.start();
@@ -596,7 +596,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     public boolean connectManagementAsServer() {
         try {
             if (mgntHandler == null) {
-                mgntHandler = new GroupManagementSocketHandler(this.getHandler());
+                mgntHandler = new SocketHandler(this.getHandler(), mMgmntPort);
                 mgntHandler.start();
             } else if (!mgntHandler.isAlive())
                 mgntHandler.start();
@@ -632,7 +632,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     public boolean connectProxyDataAsServer() {
         try {
             if (proxyDataHandler == null) {
-                proxyDataHandler = new ProxyDataSocketHandler(this.getHandler());
+                proxyDataHandler = new SocketHandler(this.getHandler(), mProxyDataPort);
                 proxyDataHandler.start();
             } else if (!proxyDataHandler.isAlive())
                 proxyDataHandler.start();
@@ -647,7 +647,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     public boolean connectProxyManagementAsServer() {
         try {
             if (proxyMgntHandler == null) {
-                proxyMgntHandler = new ProxyManagementSocketHandler(this.getHandler());
+                proxyMgntHandler = new SocketHandler(this.getHandler(), mProxyMgmntPort);
                 proxyMgntHandler.start();
             } else if (!proxyMgntHandler.isAlive())
                 proxyMgntHandler.start();
@@ -1441,8 +1441,6 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
         buddies.clear();
 
-        performanceAnalysis.reset();
-
         declareGoHandler.removeCallbacks(declareGoRunnable);
         decideGroupHandler.removeCallbacks(decideGroupRunnable);
         decideProxyHandler.removeCallbacks(decideProxyRunnable);
@@ -1457,25 +1455,25 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
         if (mgntHandler != null)
             try {
-                ((GroupManagementSocketHandler) mgntHandler).closeServerSocket();
+                ((SocketHandler) mgntHandler).closeServerSocket();
             } catch (Exception e) {
             }
 
         if (dataHandler != null)
             try {
-                ((GroupDataSocketHandler) dataHandler).closeServerSocket();
+                ((SocketHandler) dataHandler).closeServerSocket();
             } catch (Exception e) {
             }
 
         if (proxyMgntHandler != null)
             try {
-                ((ProxyDataSocketHandler) proxyMgntHandler).closeServerSocket();
+                ((SocketHandler) proxyMgntHandler).closeServerSocket();
             } catch (Exception e) {
             }
 
         if (proxyDataHandler != null)
             try {
-                ((ProxyManagementSocketHandler) proxyDataHandler).closeServerSocket();
+                ((SocketHandler) proxyDataHandler).closeServerSocket();
             } catch (Exception e) {
             }
 
@@ -1485,6 +1483,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         proxyDataHandler = null;
 
         if (reRun) {
+            performanceAnalysis.reset();
+
             declareGoHandler.postDelayed(declareGoRunnable, mDeclareGoPeriod);
             thisDeviceState = ThisDeviceState.COLLECTING_DEVICE_INFO;
 

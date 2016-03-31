@@ -1,5 +1,4 @@
 package esnetlab.apps.android.wifidirect.efficientmultigroups;
-
 import android.os.Handler;
 import android.util.Log;
 
@@ -8,27 +7,33 @@ import java.net.ServerSocket;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
 /**
  * Created by Ahmed on 4/8/2015.
  */
-public class GroupManagementSocketHandler extends Thread {
+/**
+ * The implementation of a ServerSocket handler. This is used by the wifi p2p
+ * members including the group owner.
+ */
+public class SocketHandler extends Thread {
 
-    private static final String TAG = "GroupManagementSH";
+    private static final String TAG = "SocketHandler";
     private final int THREAD_COUNT = 10;
     /**
-     * A ThreadPool for Group Management sockets.
+     * A ThreadPool for client sockets.
      */
     private final ThreadPoolExecutor pool = new ThreadPoolExecutor(
             THREAD_COUNT, THREAD_COUNT, 10, TimeUnit.SECONDS,
             new LinkedBlockingQueue<Runnable>());
     ServerSocket socket = null;
     private Handler handler;
+    private int portNo;
 
-    public GroupManagementSocketHandler(Handler handler) throws IOException {
+    public SocketHandler(Handler handler, int portNo) throws IOException {
         try {
-            socket = new ServerSocket(EfficientWiFiP2pGroupsActivity.mMgmntPort);
             this.handler = handler;
+            this.portNo = portNo;
+
+            socket = new ServerSocket(portNo);
             Log.d(TAG, "Socket Started");
         } catch (IOException e) {
             e.printStackTrace();
@@ -44,7 +49,7 @@ public class GroupManagementSocketHandler extends Thread {
             try {
                 // A blocking operation. Initiate a SocketManager instance when
                 // there is a new connection
-                pool.execute(new SocketManager(socket.accept(), handler, EfficientWiFiP2pGroupsActivity.mMgmntPort));
+                pool.execute(new SocketManager(socket.accept(), handler, portNo));
                 Log.d(TAG, "Launching the I/O handler");
 
             } catch (IOException e) {
@@ -68,6 +73,8 @@ public class GroupManagementSocketHandler extends Thread {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        pool.shutdownNow();
     }
 }
+
 
