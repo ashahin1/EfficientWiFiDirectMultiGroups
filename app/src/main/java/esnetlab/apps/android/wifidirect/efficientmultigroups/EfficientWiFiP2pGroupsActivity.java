@@ -1463,103 +1463,148 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     public boolean handleMessage(Message msg) {
         switch (msg.what) {
             case DATA_MESSAGE_READ:
-                SocketManager sm = ((BufferSocket) msg.obj).socketManager;
-                byte[] readBuf = ((BufferSocket) msg.obj).buffer;
-                // construct a string from the valid bytes in the buffer
-                String readMessage = new String(readBuf, 0, msg.arg1);
-                //Logging stats
-                SocketPeer peer = groupSocketPeers.getPeerFromSocketManager(sm);
-                if (peer != null) {
-                    performanceAnalysis.addSocketStatistic(peer.deviceAddress, peer.ipAddress
-                            , readMessage.length(), false);
-                }
-
-                MessageTypeData msgTypeData = MessageHelper.getMessageTypeAndData(readMessage);
-                if (msgTypeData != null) {
-                    if (msgTypeData.messageType == MessageType.DATA_GM_TO_GROUP) {
-                        String peerName = groupSocketPeers.getPeerNameFromSocketManager(sm);
-                        appendLogReceived("[" + peerName + "]: " + msgTypeData.messageData);
-                        //Forward data if me is a proxy
-                        forwardIfMeIsProxy(msgTypeData.messageData);
-
-                    } else if (msgTypeData.messageType == MessageType.DATA_LEGACY_AP_FROM_PROXY) {
-                        appendLogReceived("[LEGACY_FROM_PROXY]: " + msgTypeData.messageData);
-                    } else {
-                        appendLogReceived("Unknown DATA message !!!");
-                    }
-                } else appendLogReceived("Corrupted DATA message !!!");
+                processDataMessageRead(msg);
                 break;
 
             case DATA_SOCKET_HANDLE:
-                sm = (SocketManager) msg.obj;
-                groupSocketPeers.addDataSocketManagerToPeer(sm);
-                appendLog("New DataSocketHandle received -> " + sm.getSocket().getInetAddress().toString());
-                appendLog("No of peers so far = " + groupSocketPeers.getPeers().size());
+                processDataSocketHandle(msg);
                 break;
 
             case MGMNT_MESSAGE_READ:
-                readBuf = ((BufferSocket) msg.obj).buffer;
-                readMessage = new String(readBuf, 0, msg.arg1);
-                appendLog("Management msg read: " + readMessage);
-                sm = ((BufferSocket) msg.obj).socketManager;
-                //Logging stats
-                peer = groupSocketPeers.getPeerFromSocketManager(sm);
-                if (peer != null) {
-                    performanceAnalysis.addSocketStatistic(peer.deviceAddress, peer.ipAddress
-                            , readMessage.length(), true);
-                }
-
-                processManagementMessage(readMessage, sm);
+                processManagementMessageRead(msg);
                 break;
 
             case MGMNT_SOCKET_HANDLE:
-                sm = (SocketManager) msg.obj;
-                boolean peerIsGo = !p2pInfo.isGroupOwner;
-                groupSocketPeers.addManagementSocketManagerToPeer(sm, peerIsGo);
-                appendLog("New ManagementSocketHandle received -> " + sm.getSocket().getInetAddress().toString());
+                processManagementSocketHandle(msg);
                 break;
 
             case MGMNT_SOCKET_PEER_ADDR:
-
                 break;
 
             case PROXY_DATA_MESSAGE_READ:
-                readBuf = ((BufferSocket) msg.obj).buffer;
-                readMessage = new String(readBuf, 0, msg.arg1);
-                msgTypeData = MessageHelper.getMessageTypeAndData(readMessage);
-                if (msgTypeData != null) {
-                    if (msgTypeData.messageType == MessageType.DATA_PROXY_TO_LEGACY_AP) {
-                        appendLogReceived("[PROXY_TO_LEGACY]: " + msgTypeData.messageData);
-                        groupSocketPeers.sendToAllDataSockets(
-                                msgTypeData.messageData,
-                                MessageType.DATA_LEGACY_AP_FROM_PROXY);
-                    } else {
-                        appendLogReceived("Unknown DATA message !!!");
-                    }
-                } else appendLogReceived("Corrupted DATA message !!!");
+                processProxyDataMessageRead(msg);
                 break;
 
             case PROXY_DATA_SOCKET_HANDLE:
-                sm = (SocketManager) msg.obj;
-                proxySocketPeer.proxyDataSocketManager = sm;
-                appendLog("New ProxyDataSocketHandle received -> " + sm.getSocket().getInetAddress().toString());
+                processProxyDataSocketHandle(msg);
                 break;
 
             case PROXY_MGMNT_MESSAGE_READ:
-                readBuf = ((BufferSocket) msg.obj).buffer;
-                readMessage = new String(readBuf, 0, msg.arg1);
-                appendLog("Management msg read: " + readMessage);
-                sm = ((BufferSocket) msg.obj).socketManager;
-                processManagementMessage(readMessage, sm);
+                processProxyManagementMessageRead(msg);
                 break;
 
             case PROXY_MGMNT_SOCKET_HANDLE:
-                sm = (SocketManager) msg.obj;
-                proxySocketPeer.proxyManagementSocketManager = sm;
-                Log.d(TAG, "New ProxyManagementSocketHandle received -> " + sm.getSocket().getInetAddress().toString());
+                processProxyManagementSocketHandle(msg);
                 break;
         }
         return true;
+    }
+
+    private void processProxyManagementSocketHandle(Message msg) {
+        SocketManager sm;
+        sm = (SocketManager) msg.obj;
+        proxySocketPeer.proxyManagementSocketManager = sm;
+        Log.d(TAG, "New ProxyManagementSocketHandle received -> " + sm.getSocket().getInetAddress().toString());
+    }
+
+    private void processProxyManagementMessageRead(Message msg) {
+        byte[] readBuf;
+        String readMessage;
+        SocketManager sm;
+        readBuf = ((BufferSocket) msg.obj).buffer;
+        readMessage = new String(readBuf, 0, msg.arg1);
+        appendLog("Management msg read: " + readMessage);
+        sm = ((BufferSocket) msg.obj).socketManager;
+        processManagementMessage(readMessage, sm);
+    }
+
+    private void processProxyDataSocketHandle(Message msg) {
+        SocketManager sm;
+        sm = (SocketManager) msg.obj;
+        proxySocketPeer.proxyDataSocketManager = sm;
+        appendLog("New ProxyDataSocketHandle received -> " + sm.getSocket().getInetAddress().toString());
+    }
+
+    private void processProxyDataMessageRead(Message msg) {
+        byte[] readBuf;
+        String readMessage;
+        MessageTypeData msgTypeData;
+        readBuf = ((BufferSocket) msg.obj).buffer;
+        readMessage = new String(readBuf, 0, msg.arg1);
+        msgTypeData = MessageHelper.getMessageTypeAndData(readMessage);
+        if (msgTypeData != null) {
+            if (msgTypeData.messageType == MessageType.DATA_PROXY_TO_LEGACY_AP) {
+                appendLogReceived("[PROXY_TO_LEGACY]: " + msgTypeData.messageData);
+                groupSocketPeers.sendToAllDataSockets(
+                        msgTypeData.messageData,
+                        MessageType.DATA_LEGACY_AP_FROM_PROXY);
+            } else {
+                appendLogReceived("Unknown DATA message !!!");
+            }
+        } else appendLogReceived("Corrupted DATA message !!!");
+    }
+
+    private void processManagementSocketHandle(Message msg) {
+        SocketManager sm;
+        sm = (SocketManager) msg.obj;
+        boolean peerIsGo = !p2pInfo.isGroupOwner;
+        groupSocketPeers.addManagementSocketManagerToPeer(sm, peerIsGo);
+        appendLog("New ManagementSocketHandle received -> " + sm.getSocket().getInetAddress().toString());
+    }
+
+    private void processManagementMessageRead(Message msg) {
+        byte[] readBuf;
+        String readMessage;
+        SocketManager sm;
+        SocketPeer peer;
+        readBuf = ((BufferSocket) msg.obj).buffer;
+        readMessage = new String(readBuf, 0, msg.arg1);
+        appendLog("Management msg read: " + readMessage);
+        sm = ((BufferSocket) msg.obj).socketManager;
+        //Logging stats
+        peer = groupSocketPeers.getPeerFromSocketManager(sm);
+        if (peer != null) {
+            performanceAnalysis.addSocketStatistic(peer.deviceAddress, peer.ipAddress
+                    , readMessage.length(), true);
+        }
+
+        processManagementMessage(readMessage, sm);
+    }
+
+    private void processDataSocketHandle(Message msg) {
+        SocketManager sm;
+        sm = (SocketManager) msg.obj;
+        groupSocketPeers.addDataSocketManagerToPeer(sm);
+        appendLog("New DataSocketHandle received -> " + sm.getSocket().getInetAddress().toString());
+        appendLog("No of peers so far = " + groupSocketPeers.getPeers().size());
+    }
+
+    private void processDataMessageRead(Message msg) {
+        SocketManager sm = ((BufferSocket) msg.obj).socketManager;
+        byte[] readBuf = ((BufferSocket) msg.obj).buffer;
+        // construct a string from the valid bytes in the buffer
+        String readMessage = new String(readBuf, 0, msg.arg1);
+        //Logging stats
+        SocketPeer peer = groupSocketPeers.getPeerFromSocketManager(sm);
+        if (peer != null) {
+            performanceAnalysis.addSocketStatistic(peer.deviceAddress, peer.ipAddress
+                    , readMessage.length(), false);
+        }
+
+        MessageTypeData msgTypeData = MessageHelper.getMessageTypeAndData(readMessage);
+        if (msgTypeData != null) {
+            if (msgTypeData.messageType == MessageType.DATA_GM_TO_GROUP) {
+                String peerName = groupSocketPeers.getPeerNameFromSocketManager(sm);
+                appendLogReceived("[" + peerName + "]: " + msgTypeData.messageData);
+                //Forward data if me is a proxy
+                forwardIfMeIsProxy(msgTypeData.messageData);
+
+            } else if (msgTypeData.messageType == MessageType.DATA_LEGACY_AP_FROM_PROXY) {
+                appendLogReceived("[LEGACY_FROM_PROXY]: " + msgTypeData.messageData);
+            } else {
+                appendLogReceived("Unknown DATA message !!!");
+            }
+        } else appendLogReceived("Corrupted DATA message !!!");
     }
 
     private void processManagementMessage(String readMessage, SocketManager socketManager) {

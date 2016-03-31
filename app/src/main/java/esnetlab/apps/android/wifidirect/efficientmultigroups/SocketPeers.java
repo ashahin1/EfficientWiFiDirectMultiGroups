@@ -192,7 +192,7 @@ public class SocketPeers {
             str += socketPeer.toString() + ";";
         }
         //remove the last semicolon
-        if (!str.equals(""))
+        if (!"".equals(str))
             str = str.substring(0, str.length() - 1);
         return str;
     }
