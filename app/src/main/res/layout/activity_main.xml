@@ -37,8 +37,8 @@
                 android:layout_gravity="bottom|end"
                 android:layout_weight="0.05"
                 android:drawableEnd="@drawable/ic_action_send"
-                android:text="@string/btn_send"
-                android:drawableRight="@drawable/ic_action_send" />
+                android:drawableRight="@drawable/ic_action_send"
+                android:text="@string/btn_send" />
         </LinearLayout>
 
         <LinearLayout
@@ -46,36 +46,56 @@
             android:layout_height="match_parent"
             android:orientation="vertical">
 
-            <ScrollView
-                android:id="@+id/textAreaScroller1"
+            <android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:card_view="http://schemas.android.com/apk/res-auto"
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
                 android:layout_weight="0.6"
-                android:background="?attr/colorAccent"
-                android:scrollbars="vertical">
+                card_view:cardElevation="20dp">
 
-                <TextView
-                    android:id="@+id/txt_received"
+                <ScrollView
+                    android:id="@+id/textAreaScroller1"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@android:color/transparent"
-                    android:textColor="@color/my_text_color_light"
-                    android:scrollbars="vertical" />
-            </ScrollView>
+                    android:layout_height="match_parent"
 
-            <ScrollView
-                android:id="@+id/textAreaScroller2"
+                    android:background="?attr/colorAccent"
+                    android:scrollbars="vertical">
+
+                    <TextView
+                        android:id="@+id/txt_received"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@android:color/transparent"
+                        android:scrollbars="vertical"
+                        android:textColor="@color/my_text_color_light" />
+                </ScrollView>
+            </android.support.v7.widget.CardView>
+
+            <android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:card_view="http://schemas.android.com/apk/res-auto"
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
                 android:layout_weight="0.4"
-                android:scrollbars="vertical">
+                card_view:cardElevation="20dp">
 
-                <TextView
-                    android:id="@+id/txt_log"
+                <ScrollView
+                    android:id="@+id/textAreaScroller2"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:scrollbars="vertical" />
-            </ScrollView>
+                    android:layout_height="match_parent"
+
+                    android:scrollbars="vertical">
+
+                    <TextView
+                        android:id="@+id/txt_log"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingBottom="@dimen/activity_vertical_margin"
+                        android:paddingLeft="@dimen/activity_horizontal_margin"
+                        android:paddingRight="@dimen/activity_horizontal_margin"
+                        android:paddingTop="@dimen/activity_vertical_margin"
+                        android:scrollbars="vertical" />
+                </ScrollView>
+            </android.support.v7.widget.CardView>
         </LinearLayout>
     </LinearLayout>
 
@@ -87,6 +107,7 @@
         android:clickable="true"
         android:src="@drawable/ic_action_fab"
         app:layout_anchor="@id/textAreaScroller2"
-        app:layout_anchorGravity="bottom|right|end" />
+        app:layout_anchorGravity="bottom|right|end"
+        app:layout_behavior="esnetlab.apps.android.wifidirect.efficientmultigroups.ScrollAwareFABBehavior" />
 
 </android.support.design.widget.CoordinatorLayout>
