@@ -71,5 +71,7 @@
     <integer name="pref_default_proxy_management_port">4544</integer>
 
     <string name="pref_title_proxy_data_port">Proxy Data Port</string>
+    <string name="action_save_stats">Save Statistics to File</string>
+    <string name="action_continuous_data">Continuous Data Streaming</string>
     <integer name="pref_default_proxy_data_port">4543</integer>
 </resources>

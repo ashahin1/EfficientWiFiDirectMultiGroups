@@ -29,6 +29,7 @@ public interface ProtocolConstants {
     String RECORD_SSID = "ssid";
     String RECORD_KEY = "key";
     String RECORD_PROPOSED_IP = "pIP";
+    String RECORD_NUMBER_OF_MEMBERS = "num";
     String PASSWORD = "AllahAkbarAllahA";
 
     //Pref_Keys for port parameters

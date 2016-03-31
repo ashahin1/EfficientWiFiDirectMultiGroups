@@ -16,6 +16,7 @@ public class DiscoveryPeerInfo {
     public static final String LEGACY_KEY = "LegacyKey";
     public static final String BATTERY_IS_CHARGING = "BatteryIsCharging";
     public static final String PROPOSED_IP = "ProposedIP";
+    public static final String NUM_OF_MEMBERS = "NumOfMembers";
 
     public String deviceId;
     public int batteryLevel;
@@ -24,27 +25,28 @@ public class DiscoveryPeerInfo {
     public String legacySSID;
     public String legacyKey;
     public int proposedIP; //The third octet of the IP
+    public int numOfMembers;
 
     DiscoveryPeerInfo() {
-        updatePeerInfo("", -1, -1, false, -1, "", "");
+        updatePeerInfo("", -1, -1, false, -1, "", "", 0);
     }
 
     DiscoveryPeerInfo(String deviceId) {
-        updatePeerInfo(deviceId, -1, -1, false, -1, "", "");
+        updatePeerInfo(deviceId, -1, -1, false, -1, "", "", 0);
     }
 
     DiscoveryPeerInfo(String deviceId, int batteryLevel, int batteryCapacity, boolean batteryIsCharging, int proposedIP) {
-        updatePeerInfo(deviceId, batteryLevel, batteryCapacity, batteryIsCharging, proposedIP, "", "");
+        updatePeerInfo(deviceId, batteryLevel, batteryCapacity, batteryIsCharging, proposedIP, "", "", 0);
     }
 
-    DiscoveryPeerInfo(String deviceId, int batteryLevel, int batteryCapacity, boolean batteryIsCharging, int proposedIP, String legacySSID, String legacyKey) {
-        updatePeerInfo(deviceId, batteryLevel, batteryCapacity, batteryIsCharging, proposedIP, legacySSID, legacyKey);
+    DiscoveryPeerInfo(String deviceId, int batteryLevel, int batteryCapacity, boolean batteryIsCharging, int proposedIP, String legacySSID, String legacyKey, int numOfMembers) {
+        updatePeerInfo(deviceId, batteryLevel, batteryCapacity, batteryIsCharging, proposedIP, legacySSID, legacyKey, numOfMembers);
     }
 
     public static DiscoveryPeerInfo convertStringToPeerInfo(String peerInfoStr) {
         DiscoveryPeerInfo discoveryPeerInfo = new DiscoveryPeerInfo();
         String splitArr1[] = peerInfoStr.split(",");
-        if (splitArr1.length == 7) {
+        if (splitArr1.length == 8) {
             for (String str : splitArr1) {
                 String splitArr2[] = str.split("->");
                 if (splitArr2.length == 2) {
@@ -70,8 +72,10 @@ public class DiscoveryPeerInfo {
                         case LEGACY_KEY:
                             discoveryPeerInfo.legacyKey = tmp;
                             break;
+                        case NUM_OF_MEMBERS:
+                            discoveryPeerInfo.numOfMembers = Integer.valueOf(tmp);
+                            break;
                     }
-
                 }
             }
         }
@@ -88,7 +92,7 @@ public class DiscoveryPeerInfo {
         return pIP;
     }
 
-    private void updatePeerInfo(String deviceId, int batteryLevel, int batteryCapacity, boolean batteryIsCharging, int proposedIP, String legacySSID, String legacyKey) {
+    private void updatePeerInfo(String deviceId, int batteryLevel, int batteryCapacity, boolean batteryIsCharging, int proposedIP, String legacySSID, String legacyKey, int numOfMembers) {
         this.deviceId = deviceId;
         this.batteryCapacity = batteryCapacity;
         this.batteryLevel = batteryLevel;
@@ -96,11 +100,19 @@ public class DiscoveryPeerInfo {
         this.proposedIP = proposedIP;// == -1 ? generateProposedIP() : proposedIP;
         this.legacySSID = legacySSID;
         this.legacyKey = legacyKey;
+        this.numOfMembers = numOfMembers;
     }
 
     private void updatePeerInfo(String peerInfoStr) {
         DiscoveryPeerInfo discoveryPeerInfo = convertStringToPeerInfo(peerInfoStr);
-        updatePeerInfo(discoveryPeerInfo.deviceId, discoveryPeerInfo.batteryLevel, discoveryPeerInfo.batteryCapacity, discoveryPeerInfo.batteryIsCharging, discoveryPeerInfo.proposedIP, discoveryPeerInfo.legacySSID, discoveryPeerInfo.legacyKey);
+        updatePeerInfo(discoveryPeerInfo.deviceId
+                , discoveryPeerInfo.batteryLevel
+                , discoveryPeerInfo.batteryCapacity
+                , discoveryPeerInfo.batteryIsCharging
+                , discoveryPeerInfo.proposedIP
+                , discoveryPeerInfo.legacySSID
+                , discoveryPeerInfo.legacyKey
+                , discoveryPeerInfo.numOfMembers);
     }
 
     public Boolean getIsGO() {
@@ -127,9 +139,10 @@ public class DiscoveryPeerInfo {
     @Override
     public String toString() {
         String str;
-        str = String.format(Locale.US, "%s-> %s, %s-> %d, %s-> %d, %s-> %s, %s-> %d, %s-> %s, %s-> %s",
+        str = String.format(Locale.US, "%s-> %s, %s-> %d, %s-> %d, %s-> %s, %s-> %d, %s-> %s, %s-> %s, %s-> %d",
                 DEVICE_ID, deviceId, BATTERY_LEVEL, batteryLevel, BATTERY_CAPACITY, batteryCapacity,
-                BATTERY_IS_CHARGING, Boolean.toString(batteryIsCharging), PROPOSED_IP, proposedIP, LEGACY_SSID, legacySSID, LEGACY_KEY, legacyKey);
+                BATTERY_IS_CHARGING, Boolean.toString(batteryIsCharging), PROPOSED_IP, proposedIP,
+                LEGACY_SSID, legacySSID, LEGACY_KEY, legacyKey, NUM_OF_MEMBERS, numOfMembers);
         return str;
     }
 }

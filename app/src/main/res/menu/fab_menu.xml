@@ -13,11 +13,16 @@
     <item
         android:id="@+id/action_create_service"
         android:icon="@drawable/ic_action_create_service"
-        android:orderInCategory="1"
+        android:orderInCategory="3"
         android:title="@string/action_create_service" />
     <item
         android:id="@+id/action_list_services"
         android:icon="@drawable/ic_action_list_services"
-        android:orderInCategory="2"
+        android:orderInCategory="4"
         android:title="@string/action_list_services" />
+    <item
+        android:id="@+id/action_continuous_data"
+        android:icon="@drawable/ic_action_continuous_data"
+        android:orderInCategory="5"
+        android:title="@string/action_continuous_data" />
 </menu>

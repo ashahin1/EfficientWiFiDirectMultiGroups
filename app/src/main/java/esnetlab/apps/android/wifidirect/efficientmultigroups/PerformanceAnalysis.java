@@ -1,13 +1,6 @@
 package esnetlab.apps.android.wifidirect.efficientmultigroups;
 
-import android.os.Environment;
-import android.util.Log;
-
-import java.io.File;
-import java.io.FileOutputStream;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -248,6 +241,7 @@ class MessageCounter {
         String str = "";
 
         str += String.format(Locale.US, "Total Number of Messages: %d\n", getTotalNumberOfMessages());
+        str += String.format(Locale.US, "Total Length of Messages: %d\n", getTotalLength());
         str += String.format(Locale.US, "Bandwidth: %f\n\n", getBandwidth());
         str += String.format(Locale.US, "%20s%20s\n", "Length", "Count");
         str += String.format(Locale.US, "%40s\n", " ").replace(" ", "-");

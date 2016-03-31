@@ -24,7 +24,7 @@ public class SocketHandler extends Thread {
     private final ThreadPoolExecutor pool = new ThreadPoolExecutor(
             THREAD_COUNT, THREAD_COUNT, 10, TimeUnit.SECONDS,
             new LinkedBlockingQueue<Runnable>());
-    ServerSocket socket = null;
+    private ServerSocket socket = null;
     private Handler handler;
     private int portNo;
 

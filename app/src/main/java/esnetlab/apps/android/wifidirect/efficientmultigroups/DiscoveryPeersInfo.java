@@ -72,6 +72,9 @@ public class DiscoveryPeersInfo implements ProtocolConstants {
             else
                 peerInfo.legacyKey = record.get(RECORD_KEY);
         }
+        if (record.containsKey(RECORD_NUMBER_OF_MEMBERS)) {
+            peerInfo.numOfMembers = Integer.valueOf(record.get(RECORD_NUMBER_OF_MEMBERS));
+        }
 
         return cond1 & cond2;
     }

@@ -107,6 +107,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     private EditText txtSend;
     private TextView txtReceived;
 
+    private boolean streamingStarted = false;
     private boolean requestRun = false;
     private int runNumber = 1;
 
@@ -192,7 +193,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
     private void saveStatistics() {
         String str = "EMC RUN NUMBER " + runNumber + "\n"
-                + "DATE " + Calendar.getInstance().toString() + "\n"
+                + "DATE " + Calendar.getInstance().getTime().toString() + "\n"
                 + "DEVICE MODEL " + Build.MODEL + "\n"
                 + "DEVICE NAME " + (p2pDevice != null ? p2pDevice.deviceName : "") + "\n";
         str += performanceAnalysis.getStatistics(p2pDevice != null ? p2pDevice.deviceAddress : "");
@@ -213,7 +214,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             @Override
             public void run() {
                 String str = "EMC RUN NUMBER " + runNumber + "\n"
-                        + "DATE " + Calendar.getInstance().toString() + "\n"
+                        + "DATE " + Calendar.getInstance().getTime().toString() + "\n"
                         + "DEVICE MODEL " + Build.MODEL + "\n"
                         + "DEVICE NAME " + (p2pDevice != null ? p2pDevice.deviceName : "") + "\n";
                 str += txtLog.getText().toString();
@@ -432,9 +433,40 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                 sleep(1000);
                 discoverServices();
                 return true;
+            case R.id.action_continuous_data:
+                if (!streamingStarted) {
+                    streamContinuousData();
+                } else {
+                    streamingStarted = false;
+                }
+                return true;
             default:
                 return super.onContextItemSelected(item);
         }
+    }
+
+    private void streamContinuousData() {
+        streamingStarted = true;
+        th1 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                String randomDataToSend = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+                while (streamingStarted) {
+                    int count = groupSocketPeers.sendToAllDataSockets(randomDataToSend, MessageType.STREAM_DATA_TEST);
+                    if (count > 0) {
+                        performanceAnalysis.sentDataSocketMessagesCount += count;
+                        forwardIfMeIsProxy(randomDataToSend);
+                        appendLogReceivedUiThread("StreamData -> [ME]: ...");
+                    }
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+        th1.start();
     }
 
     @Override
@@ -504,6 +536,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             txtLog.setText("");
         } else if (id == R.id.action_save_log) {
             saveLog();
+        } else if(id == R.id.action_save_stats) {
+            saveStatistics();
         }
 
         return super.onOptionsItemSelected(item);
@@ -867,10 +901,13 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
             String legacySSID = p2pGroup.getNetworkName();
             String legacyPassPhrase = p2pGroup.getPassphrase();
+            int numOfMembers = p2pGroup.getClientList().size();
+
             //Declare the type as "1" which means a LegacyAP service record
             record.put(RECORD_TYPE, RECORD_TYPE_LEGACY_AP);
             record.put(RECORD_SSID, legacySSID);
             record.put(RECORD_KEY, legacyPassPhrase);
+            record.put(RECORD_NUMBER_OF_MEMBERS, String.valueOf(numOfMembers));
 
             encryptDecryptRecordElement(record, true, RECORD_KEY);
 
@@ -1670,6 +1707,11 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                 //Forward data if me is a proxy
                 forwardIfMeIsProxy(msgTypeData.messageData);
 
+            } else if (msgTypeData.messageType == MessageType.STREAM_DATA_TEST) {
+                String peerName = groupSocketPeers.getPeerNameFromSocketManager(sm);
+                appendLogReceived("[" + peerName + "]: ...");
+                //Forward data if me is a proxy
+                forwardIfMeIsProxy(msgTypeData.messageData);
             } else if (msgTypeData.messageType == MessageType.DATA_LEGACY_AP_FROM_PROXY) {
                 appendLogReceived("[LEGACY_FROM_PROXY]: " + msgTypeData.messageData);
             } else {

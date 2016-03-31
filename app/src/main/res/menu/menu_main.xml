@@ -21,6 +21,12 @@
         android:title="@string/action_save_log"
         app:showAsAction="ifRoom" />
     <item
+        android:id="@+id/action_save_stats"
+        android:icon="@drawable/ic_action_save_log"
+        android:orderInCategory="40"
+        android:title="@string/action_save_stats"
+        app:showAsAction="ifRoom" />
+    <item
         android:id="@+id/action_settings"
         android:icon="@drawable/ic_action_settings"
         android:orderInCategory="100"
