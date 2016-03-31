@@ -48,6 +48,7 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteOrder;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -62,27 +63,27 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     private static final int REQUEST_WRITE_STORAGE = 112;
 
     //Port parameters
-    public static int mMgmntPort = 4546;
-    public static int mDataPort = 4545;
-    public static int mProxyMgmntPort = 4544;
-    public static int mProxyDataPort = 4543;
+    public static int mMgmntPort;
+    public static int mDataPort;
+    public static int mProxyMgmntPort;
+    public static int mProxyDataPort;
 
     //Ranking parameters
-    public static float mRankAlpha = 0.34f;
-    public static float mRankBeta = 0.33f;
-    public static float mRankGamma = 0.33f;
-    public static float mRankMaxCapacity = 4000.0f;
+    public static float mRankAlpha;
+    public static float mRankBeta;
+    public static float mRankGamma;
+    public static float mRankMaxCapacity;
 
     //Protocol timing parameters
-    public static int mSendMyInfPeriod = 2000;
-    public static int mSendPeersInfoPeriod = 4000;
-    public static int mDiscoverServicesPeriod = 6000;
-    public static int mAddServicesPeriod = 3000;
-    public static int mDeclareGoPeriod = 30000;
-    public static int mDecideGroupPeriod = 15000;
-    public static int mDecideProxyPeriod = 40000;
-    public static int mSendNearbyLegacyApsInfoPeriod = 3000;
-    public static int mSendTearDownPeriod = 300000;
+    public static int mSendMyInfPeriod;
+    public static int mSendPeersInfoPeriod;
+    public static int mDiscoverServicesPeriod;
+    public static int mAddServicesPeriod;
+    public static int mDeclareGoPeriod;
+    public static int mDecideGroupPeriod;
+    public static int mDecideProxyPeriod;
+    public static int mSendNearbyLegacyApsInfoPeriod;
+    public static int mSendTearDownPeriod;
 
     public static WifiP2pInfo p2pInfo = null;
     public static WifiP2pGroup p2pGroup = null;
@@ -102,11 +103,13 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
     public int myProposedIP = DiscoveryPeerInfo.generateProposedIP();
 
-    TextView txtLog;
-    EditText txtSend;
-    TextView txtReceived;
+    private TextView txtLog;
+    private EditText txtSend;
+    private TextView txtReceived;
 
-    boolean requestRun = false;
+    private boolean requestRun = false;
+    private int runNumber = 1;
+
 
     Thread th1, th2;
     Thread mgntHandler = null;
@@ -179,9 +182,51 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     private final Runnable tearDownRunnable = new Runnable() {
         @Override
         public void run() {
+            saveLog();
+            clearLog();
+            saveStatistics();
             tearDownGroupAndReRun();
+            runNumber++;
         }
     };
+
+    private void saveStatistics() {
+        String str = "EMC RUN NUMBER " + runNumber + "\n"
+                + "DATE " + Calendar.getInstance().toString() + "\n"
+                + "DEVICE MODEL " + Build.MODEL + "\n"
+                + "DEVICE NAME " + (p2pDevice != null ? p2pDevice.deviceName : "") + "\n";
+        str += performanceAnalysis.getStatistics(p2pDevice != null ? p2pDevice.deviceAddress : "");
+        Utilities.writeStringToFile(str, "EMC_Stats_" + Build.MODEL + "_");
+    }
+
+    private void clearLog() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                txtLog.setText("");
+            }
+        });
+    }
+
+    private void saveLog() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                String str = "EMC RUN NUMBER " + runNumber + "\n"
+                        + "DATE " + Calendar.getInstance().toString() + "\n"
+                        + "DEVICE MODEL " + Build.MODEL + "\n"
+                        + "DEVICE NAME " + (p2pDevice != null ? p2pDevice.deviceName : "") + "\n";
+                str += txtLog.getText().toString();
+
+                if (Utilities.writeStringToFile(str, "EMC_log_" + Build.MODEL + "_")) {
+                    Toast.makeText(getApplicationContext(), "Log saved successfully", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(getApplicationContext(), "Log failed to save", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
     private final Runnable sendTearDownRunnable = new Runnable() {
         @Override
         public void run() {
@@ -215,25 +260,44 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     private void setupPreferences() {
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         if (sharedPreferences != null) {
-            mMgmntPort = Integer.parseInt(sharedPreferences.getString(PREF_MGMNT_PORT, String.valueOf(mMgmntPort)));
-            mDataPort = Integer.parseInt(sharedPreferences.getString(PREF_DATA_PORT, String.valueOf(mDataPort)));
-            mProxyMgmntPort = Integer.parseInt(sharedPreferences.getString(PREF_PROXY_MGMNT_PORT, String.valueOf(mProxyMgmntPort)));
-            mProxyDataPort = Integer.parseInt(sharedPreferences.getString(PREF_PROXY_DATA_PORT, String.valueOf(mProxyDataPort)));
+            int pInt;
+            pInt = getResources().getInteger(R.integer.pref_default_group_management_port);
+            mMgmntPort = Integer.parseInt(sharedPreferences.getString(PREF_MGMNT_PORT, String.valueOf(pInt)));
+            pInt = getResources().getInteger(R.integer.pref_default_group_data_port);
+            mDataPort = Integer.parseInt(sharedPreferences.getString(PREF_DATA_PORT, String.valueOf(pInt)));
+            pInt = getResources().getInteger(R.integer.pref_default_proxy_management_port);
+            mProxyMgmntPort = Integer.parseInt(sharedPreferences.getString(PREF_PROXY_MGMNT_PORT, String.valueOf(pInt)));
+            pInt = getResources().getInteger(R.integer.pref_default_proxy_data_port);
+            mProxyDataPort = Integer.parseInt(sharedPreferences.getString(PREF_PROXY_DATA_PORT, String.valueOf(pInt)));
 
-            mRankAlpha = Float.parseFloat(sharedPreferences.getString(PREF_RANK_ALPHA, String.valueOf(mRankAlpha)));
-            mRankBeta = Float.parseFloat(sharedPreferences.getString(PREF_RANK_BETA, String.valueOf(mRankBeta)));
-            mRankGamma = Float.parseFloat(sharedPreferences.getString(PREF_RANK_GAMMA, String.valueOf(mRankGamma)));
-            mRankMaxCapacity = Float.parseFloat(sharedPreferences.getString(PREF_RANK_MAX_CAPACITY, String.valueOf(mRankMaxCapacity)));
+            String pStr;
+            pStr = getResources().getString(R.string.pref_default_rank_alpha);
+            mRankAlpha = Float.parseFloat(sharedPreferences.getString(PREF_RANK_ALPHA, pStr));
+            pStr = getResources().getString(R.string.pref_default_rank_beta);
+            mRankBeta = Float.parseFloat(sharedPreferences.getString(PREF_RANK_BETA, pStr));
+            pStr = getResources().getString(R.string.pref_default_rank_gamma);
+            mRankGamma = Float.parseFloat(sharedPreferences.getString(PREF_RANK_GAMMA, pStr));
+            pStr = getResources().getString(R.string.pref_default_rank_max_capacity);
+            mRankMaxCapacity = Float.parseFloat(sharedPreferences.getString(PREF_RANK_MAX_CAPACITY, pStr));
 
-            mSendMyInfPeriod = Integer.parseInt(sharedPreferences.getString(PREF_SEND_MY_INF_PERIOD, String.valueOf(mSendMyInfPeriod)));
-            mSendPeersInfoPeriod = Integer.parseInt(sharedPreferences.getString(PREF_SEND_PEERS_INFO_PERIOD, String.valueOf(mSendPeersInfoPeriod)));
-            mDiscoverServicesPeriod = Integer.parseInt(sharedPreferences.getString(PREF_DISCOVER_SERVICES_PERIOD, String.valueOf(mDiscoverServicesPeriod)));
-            mAddServicesPeriod = Integer.parseInt(sharedPreferences.getString(PREF_ADD_SERVICES_PERIOD, String.valueOf(mAddServicesPeriod)));
-            mDeclareGoPeriod = Integer.parseInt(sharedPreferences.getString(PREF_DECLARE_GO_PERIOD, String.valueOf(mDeclareGoPeriod)));
-            mDecideGroupPeriod = Integer.parseInt(sharedPreferences.getString(PREF_DECIDE_GROUP_PERIOD, String.valueOf(mDecideGroupPeriod)));
-            mDecideProxyPeriod = Integer.parseInt(sharedPreferences.getString(PREF_DECIDE_PROXY_PERIOD, String.valueOf(mDecideProxyPeriod)));
-            mSendNearbyLegacyApsInfoPeriod = Integer.parseInt(sharedPreferences.getString(PREF_SEND_NEARBY_LEGACY_APS_INFO_PERIOD, String.valueOf(mSendNearbyLegacyApsInfoPeriod)));
-            mSendTearDownPeriod = Integer.parseInt(sharedPreferences.getString(PREF_SEND_TEAR_DOWN_PERIOD, String.valueOf(mSendTearDownPeriod)));
+            pInt = getResources().getInteger(R.integer.pref_default_send_my_info);
+            mSendMyInfPeriod = Integer.parseInt(sharedPreferences.getString(PREF_SEND_MY_INF_PERIOD, String.valueOf(pInt)));
+            pInt = getResources().getInteger(R.integer.pref_default_send_peers_info);
+            mSendPeersInfoPeriod = Integer.parseInt(sharedPreferences.getString(PREF_SEND_PEERS_INFO_PERIOD, String.valueOf(pInt)));
+            pInt = getResources().getInteger(R.integer.pref_default_discover_services);
+            mDiscoverServicesPeriod = Integer.parseInt(sharedPreferences.getString(PREF_DISCOVER_SERVICES_PERIOD, String.valueOf(pInt)));
+            pInt = getResources().getInteger(R.integer.pref_default_add_services);
+            mAddServicesPeriod = Integer.parseInt(sharedPreferences.getString(PREF_ADD_SERVICES_PERIOD, String.valueOf(pInt)));
+            pInt = getResources().getInteger(R.integer.pref_default_declare_go);
+            mDeclareGoPeriod = Integer.parseInt(sharedPreferences.getString(PREF_DECLARE_GO_PERIOD, String.valueOf(pInt)));
+            pInt = getResources().getInteger(R.integer.pref_default_decide_group);
+            mDecideGroupPeriod = Integer.parseInt(sharedPreferences.getString(PREF_DECIDE_GROUP_PERIOD, String.valueOf(pInt)));
+            pInt = getResources().getInteger(R.integer.pref_default_decide_proxy);
+            mDecideProxyPeriod = Integer.parseInt(sharedPreferences.getString(PREF_DECIDE_PROXY_PERIOD, String.valueOf(pInt)));
+            pInt = getResources().getInteger(R.integer.pref_default_send_nearby_legacy_aps_info);
+            mSendNearbyLegacyApsInfoPeriod = Integer.parseInt(sharedPreferences.getString(PREF_SEND_NEARBY_LEGACY_APS_INFO_PERIOD, String.valueOf(pInt)));
+            pInt = getResources().getInteger(R.integer.pref_default_send_tear_down);
+            mSendTearDownPeriod = Integer.parseInt(sharedPreferences.getString(PREF_SEND_TEAR_DOWN_PERIOD, String.valueOf(pInt)));
         }
     }
 
@@ -439,19 +503,23 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         } else if (id == R.id.action_clear_log) {
             txtLog.setText("");
         } else if (id == R.id.action_save_log) {
-            if (Utilities.writeStringToFile(txtLog.getText().toString(), "EMC_log_")) {
-                Toast.makeText(this, "Log saved successfully", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, "Log failed to save", Toast.LENGTH_SHORT).show();
-            }
+            saveLog();
         }
 
         return super.onOptionsItemSelected(item);
     }
 
+    private int settingsReqCode = 0x1313;
     public void showSettingsDialog() {
         Intent i = new Intent(this, SettingsActivity.class);
-        startActivity(i);
+        startActivityForResult(i, settingsReqCode);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == settingsReqCode)
+            setupPreferences();
     }
 
     @Override
@@ -879,7 +947,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                                 // proposed IP is conflicting with other devices or not.
                                 if (discoveryPeersInfo.isMyProposedIpConflicting(myProposedIP)) {
                                     performanceAnalysis.conflictIpCount++;
-                                    appendLogUiThread("My Proposed IP ["+myProposedIP+"] is conflicting, trying a new one");
+                                    appendLogUiThread("My Proposed IP [" + myProposedIP + "] is conflicting, trying a new one");
                                     myProposedIP = discoveryPeersInfo.getConflictFreeIP();
                                 }
 
@@ -1269,7 +1337,9 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     }
 
     private void declareGo() {
-        if (discoveryPeersInfo.getBestGoIsMe(this)) {
+        String rankStr = discoveryPeersInfo.getBestGoIsMe(this);
+        appendLogUiThread("THE RANKS ARE AS FOLLOW:\n" + rankStr);
+        if (rankStr.contains("YES")) {
             appendLogUiThread("I AM THE BEST, TRYING TO CREATE A GROUP");
             createWifiP2pGroup();
             //Moved to Group creation callback
@@ -1286,7 +1356,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     }
 
     private void decideGroupAndConnect() {
-        discoveryPeersInfo.decideGoAndSpareToConnect();
+        String rankStr = discoveryPeersInfo.decideGoAndSpareToConnect();
+        appendLogUiThread("THE RANKS ARE AS FOLLOW:\n" + rankStr);
         WifiP2pDevice selGo = discoveryPeersInfo.getSelectedGoDevice();
         if (selGo != null) {
             appendLogUiThread("THE BEST GO IS " + selGo.deviceName + ", TRYING TO CONNECT TO IT");
@@ -1419,7 +1490,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
             startTimers();
             createDeviceInfoService();
-            appendLogUiThread("My Proposed IP address is ["+myProposedIP+"]");
+            appendLogUiThread("My Proposed IP address is [" + myProposedIP + "]");
         }
     }
 
@@ -1761,7 +1832,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                         int count = groupSocketPeers.sendToAllManagmentSockets(pLst, MessageType.MGMNT_KEEP_ALIVE);
                         performanceAnalysis.sentManagementSocketMessagesCount += count;
                         appendLogUiThread("sendPeersInfoTask: Sent -> " + pLst + " To "
-                                + groupSocketPeers.getOpenManagementSockets().size() + " Peers");
+                                + count + " Peers");
                     }
                 }
             }

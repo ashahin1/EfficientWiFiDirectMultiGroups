@@ -141,7 +141,8 @@ public class DiscoveryPeersInfo implements ProtocolConstants {
      * For a group member, ths function sets the value of the GO and SpareGo
      * That the GM should connect to.
      */
-    public void decideGoAndSpareToConnect() {
+    public String decideGoAndSpareToConnect() {
+        String rankStr = "";
         float firstRank = -1.0f;
         float secondRank = -1.0f;
         DiscoveryPeerInfo first = null, second = null;
@@ -158,10 +159,16 @@ public class DiscoveryPeersInfo implements ProtocolConstants {
                     secondRank = rank;
                     second = peerInfo;
                 }
+                rankStr += "DiscoveryPeer: "
+                        + peerInfo.toString()
+                        + "\n\tRank: "
+                        + rank + "\n";
             }
         }
         selectedGoPeer = first;
         spareGoPeer = second;
+
+        return rankStr;
     }
 
     /**
@@ -169,7 +176,8 @@ public class DiscoveryPeersInfo implements ProtocolConstants {
      *
      * @return true if me is the best
      */
-    public boolean getBestGoIsMe(Context context) {
+    public String getBestGoIsMe(Context context) {
+        String rankStr = "";
         boolean meIsBest = false;
         BatteryInformation batteryInfo = new BatteryInformation();
         batteryInfo.getBatteryStats(context);
@@ -181,12 +189,23 @@ public class DiscoveryPeersInfo implements ProtocolConstants {
             float rank = peerInfo.getCalculatedRank();
             if (rank > bestRank)
                 bestRank = rank;
+
+            rankStr += "DiscoveryPeer: "
+                    + peerInfo.toString()
+                    + "\n\tRank: "
+                    + rank + "\n";
         }
 
-        if (myInfo.getCalculatedRank() > bestRank)
+        float myRank = myInfo.getCalculatedRank();
+        rankStr += "MyInfo: "
+                + myInfo.toString()
+                + "\n\tRank: "
+                + myRank + "\n";
+
+        if (myRank > bestRank)
             meIsBest = true;
 
-        return meIsBest;
+        return meIsBest ? "YES\n" + rankStr : rankStr;
     }
 
     public boolean isMyProposedIpConflicting(int myProposedIP) {
