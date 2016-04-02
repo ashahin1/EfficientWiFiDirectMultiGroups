@@ -27,14 +27,17 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
+import android.support.design.internal.NavigationMenu;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.view.SupportMenuInflater;
+import android.support.v7.view.menu.MenuBuilder;
+import android.support.v7.view.menu.MenuPopupHelper;
 import android.util.Log;
-import android.view.ContextMenu;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
@@ -100,6 +103,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     private final PerformanceAnalysis performanceAnalysis = new PerformanceAnalysis();
 
     public ThisDeviceState thisDeviceState = ThisDeviceState.STARTED;
+    public ProtocolTestMode protocolTestMode = ProtocolTestMode.NO_TEST;
 
     public int myProposedIP = DiscoveryPeerInfo.generateProposedIP();
 
@@ -183,51 +187,10 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     private final Runnable tearDownRunnable = new Runnable() {
         @Override
         public void run() {
-            saveLog();
-            clearLog();
-            saveStatistics();
             tearDownGroupAndReRun();
             runNumber++;
         }
     };
-
-    private void saveStatistics() {
-        String str = "EMC RUN NUMBER " + runNumber + "\n"
-                + "DATE " + Calendar.getInstance().getTime().toString() + "\n"
-                + "DEVICE MODEL " + Build.MODEL + "\n"
-                + "DEVICE NAME " + (p2pDevice != null ? p2pDevice.deviceName : "") + "\n";
-        str += performanceAnalysis.getStatistics(p2pDevice != null ? p2pDevice.deviceAddress : "");
-        Utilities.writeStringToFile(str, "EMC_Stats_" + Build.MODEL + "_");
-    }
-
-    private void clearLog() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                txtLog.setText("");
-            }
-        });
-    }
-
-    private void saveLog() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                String str = "EMC RUN NUMBER " + runNumber + "\n"
-                        + "DATE " + Calendar.getInstance().getTime().toString() + "\n"
-                        + "DEVICE MODEL " + Build.MODEL + "\n"
-                        + "DEVICE NAME " + (p2pDevice != null ? p2pDevice.deviceName : "") + "\n";
-                str += txtLog.getText().toString();
-
-                if (Utilities.writeStringToFile(str, "EMC_log_" + Build.MODEL + "_")) {
-                    Toast.makeText(getApplicationContext(), "Log saved successfully", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(getApplicationContext(), "Log failed to save", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
-    }
-
     private final Runnable sendTearDownRunnable = new Runnable() {
         @Override
         public void run() {
@@ -235,6 +198,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         }
     };
     //End of Runnables
+
 
     public Handler getHandler() {
         return handler;
@@ -302,6 +266,28 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         }
     }
 
+    private void setupNetworking() {
+        wifiIntentFilter.addAction(WifiManager.NETWORK_IDS_CHANGED_ACTION);
+        wifiIntentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+        wifiIntentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
+        wifiIntentFilter.addAction(WifiManager.SUPPLICANT_CONNECTION_CHANGE_ACTION);
+        wifiIntentFilter.addAction(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
+        wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+
+        wifiP2pIntentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);//  Indicates a change in the Wi-Fi P2P status.
+        wifiP2pIntentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION); // Indicates a change in the list of available peers.
+        wifiP2pIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);// Indicates the state of Wi-Fi P2P connectivity has changed.
+        wifiP2pIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);// Indicates this device's details have changed.
+        wifiP2pIntentFilter.addAction(WifiP2pManager.WIFI_P2P_DISCOVERY_CHANGED_ACTION);//Indicates that peer discovery has either started or stopped.
+        wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
+        wifiP2pChannel = wifiP2pManager.initialize(this, getMainLooper(), null);
+
+        //Enable WiFi
+        wifiManager.setWifiEnabled(true);
+        //Clean the WiFi configured networks
+        removeConfiguredLegacyAPs("++++++++++++");
+    }
+
     private void setupControls() {
 
         txtLog = (TextView) findViewById(R.id.txt_log);
@@ -341,38 +327,91 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         final FloatingActionButton btnFab = (FloatingActionButton) findViewById(R.id.fab);
 
         if (btnFab != null) {
-            registerForContextMenu(btnFab);
             btnFab.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    openContextMenu(btnFab);
+                    initPopMenu(v);
                 }
             });
         }
     }
 
-    private void setupNetworking() {
-        wifiIntentFilter.addAction(WifiManager.NETWORK_IDS_CHANGED_ACTION);
-        wifiIntentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
-        wifiIntentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
-        wifiIntentFilter.addAction(WifiManager.SUPPLICANT_CONNECTION_CHANGE_ACTION);
-        wifiIntentFilter.addAction(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
-        wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+    private void initPopMenu(View v) {
+        //http://stackoverflow.com/questions/6805756/is-it-possible-to-display-icons-in-a-popupmenu
+        createMenu(R.menu.fab_menu, v, new MenuBuilder.Callback() {
+            @Override
+            public boolean onMenuItemSelected(MenuBuilder menu, MenuItem item) {
+                switch (item.getItemId()) {
+                    case R.id.action_create_group:
+                        if (checkGroupFormedByMe()) {
+                            removeWiFiP2pGroup(true);
+                            item.setTitle("Create Group");
+                        } else {
+                            createWifiP2pGroup();
+                            item.setTitle("Remove Group");
+                        }
+                        break;
+                    case R.id.action_discover_peers:
+                        discoverPeers();
+                        break;
+                    case R.id.action_create_service:
+                        removeDeviceInfoService();
+                        sleep(1000);
+                        createDeviceInfoService();
+                        break;
+                    case R.id.action_list_services:
+                        stopDiscoveringServices();
+                        sleep(1000);
+                        discoverServices();
+                        break;
+                    case R.id.action_ip_conflict_test:
+                        startIpConflictTest();
+                        break;
+                    case R.id.action_group_formation_test:
+                        startGroupFormationTest();
+                        break;
+                    case R.id.action_emc_full:
+                        startEmcFullTest();
+                        break;
+                    case R.id.action_stop_tests:
+                        stopAllTests();
+                        break;
+                    case R.id.action_continuous_data:
+                        if (!streamingStarted) {
+                            streamContinuousData();
+                        } else {
+                            streamingStarted = false;
+                        }
+                        break;
+                }
+                return true;
+            }
 
-        wifiP2pIntentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);//  Indicates a change in the Wi-Fi P2P status.
-        wifiP2pIntentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION); // Indicates a change in the list of available peers.
-        wifiP2pIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);// Indicates the state of Wi-Fi P2P connectivity has changed.
-        wifiP2pIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);// Indicates this device's details have changed.
-        wifiP2pIntentFilter.addAction(WifiP2pManager.WIFI_P2P_DISCOVERY_CHANGED_ACTION);//Indicates that peer discovery has either started or stopped.
-        wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
-        wifiP2pChannel = wifiP2pManager.initialize(this, getMainLooper(), null);
+            @Override
+            public void onMenuModeChange(MenuBuilder menu) {
 
-        //Enable WiFi
-        wifiManager.setWifiEnabled(true);
-        //Clean the WiFi configured networks
-        removeConfiguredLegacyAPs("++++++++++++");
+            }
+        });
     }
 
+    private void startGroupFormationTest() {
+
+    }
+
+    private void createMenu(int menuRes, View anchor, MenuBuilder.Callback callback) {
+        //http://stackoverflow.com/questions/6805756/is-it-possible-to-display-icons-in-a-popupmenu
+        Context context = anchor.getContext();
+
+        NavigationMenu navigationMenu = new NavigationMenu(context);
+        navigationMenu.setCallback(callback);
+
+        SupportMenuInflater supportMenuInflater = new SupportMenuInflater(context);
+        supportMenuInflater.inflate(menuRes, navigationMenu);
+
+        MenuPopupHelper menuPopupHelper = new MenuPopupHelper(context, navigationMenu, anchor);
+        menuPopupHelper.setForceShowIcon(true);
+        menuPopupHelper.show();
+    }
 
     private void askForWritingPermission() {
         boolean hasPermission = (ContextCompat.checkSelfPermission(getApplicationContext(),
@@ -385,7 +424,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch (requestCode) {
             case REQUEST_WRITE_STORAGE: {
@@ -399,74 +438,94 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
     }
 
-    @Override
-    public void onCreateContextMenu(ContextMenu menu, View v,
-                                    ContextMenu.ContextMenuInfo menuInfo) {
-        super.onCreateContextMenu(menu, v, menuInfo);
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.fab_menu, menu);
+
+    private void startEmcFullTest() {
+        runNumber = 0;
+        appendLogUiThread("[*] Starting EMC Full Test .................\n");
+        protocolTestMode = ProtocolTestMode.FULL_EMC_TEST;
+        tearDownGroupAndReRun();
     }
 
-    @Override
-    public boolean onContextItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.action_create_group:
-                if (checkGroupFormedByMe()) {
-                    removeWiFiP2pGroup(true);
-                    item.setTitle("Create Group");
-                } else {
-                    createWifiP2pGroup();
-                    item.setTitle("Remove Group");
-                }
-                return true;
-            case R.id.action_discover_peers:
-                //discoverPeers();
-                appendLogUiThread(performanceAnalysis.getStatistics(""));
-                return true;
-            case R.id.action_create_service:
-                removeDeviceInfoService();
-                sleep(1000);
-                createDeviceInfoService();
-                return true;
-            case R.id.action_list_services:
-                stopDiscoveringServices();
-                sleep(1000);
-                discoverServices();
-                return true;
-            case R.id.action_continuous_data:
-                if (!streamingStarted) {
-                    streamContinuousData();
-                } else {
-                    streamingStarted = false;
-                }
-                return true;
-            default:
-                return super.onContextItemSelected(item);
-        }
+    private void startIpConflictTest() {
+        runNumber = 0;
+        appendLogUiThread("[*] Starting IP Conflict Test .................\n");
+        protocolTestMode = ProtocolTestMode.IP_CONFLICT_TEST;
+        tearDownGroupAndReRun();
     }
 
-    private void streamContinuousData() {
-        streamingStarted = true;
-        th1 = new Thread(new Runnable() {
+    private void stopAllTests() {
+        saveLog();
+        clearLog();
+        saveStatistics();
+        protocolTestMode = ProtocolTestMode.NO_TEST;
+        tearDownGroupAndReRun(false);
+    }
+
+    private void saveStatistics() {
+        String str = getHeaderString();
+        str += performanceAnalysis.getStatistics(p2pDevice != null ? p2pDevice.deviceAddress : "");
+        Utilities.writeStringToFile(str, "EMC_Stats_" + Build.MODEL + "_");
+    }
+
+    private void clearLog() {
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                String randomDataToSend = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
-                while (streamingStarted) {
-                    int count = groupSocketPeers.sendToAllDataSockets(randomDataToSend, MessageType.STREAM_DATA_TEST);
-                    if (count > 0) {
-                        performanceAnalysis.sentDataSocketMessagesCount += count;
-                        forwardIfMeIsProxy(randomDataToSend);
-                        appendLogReceivedUiThread("StreamData -> [ME]: ...");
-                    }
-                    try {
-                        Thread.sleep(10);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                txtLog.setText("");
+            }
+        });
+    }
+
+    private void saveLog() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                String str = getHeaderString();
+                str += txtLog.getText().toString();
+
+                if (Utilities.writeStringToFile(str, "EMC_log_" + Build.MODEL + "_")) {
+                    Toast.makeText(getApplicationContext(), "Log saved successfully", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(getApplicationContext(), "Log failed to save", Toast.LENGTH_SHORT).show();
                 }
             }
         });
-        th1.start();
+    }
+
+    @NonNull
+    private String getHeaderString() {
+        return "EMC RUN NUMBER: " + runNumber + "\n"
+                + "TEST TYPE: " + protocolTestMode.toString() + "\n"
+                + "DATE: " + Calendar.getInstance().getTime().toString() + "\n"
+                + "DEVICE MODEL: " + Build.MODEL + "\n"
+                + "DEVICE NAME: " + (p2pDevice != null ? p2pDevice.deviceName : "") + "\n";
+    }
+
+    private void streamContinuousData() {
+        if ((thisDeviceState == ThisDeviceState.GM_COMMUNICATING_WITH_GO)
+                || thisDeviceState == ThisDeviceState.GO_ACCEPTING_CONNECTIONS) {
+            streamingStarted = true;
+            th1 = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    String randomDataToSend = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+                    while (streamingStarted) {
+                        int count = groupSocketPeers.sendToAllDataSockets(randomDataToSend, MessageType.STREAM_DATA_TEST);
+                        if (count > 0) {
+                            performanceAnalysis.sentDataSocketMessagesCount += count;
+                            forwardIfMeIsProxy(randomDataToSend);
+                            appendLogReceivedUiThread("StreamData -> [ME]: ...");
+                        }
+                        try {
+                            Thread.sleep(10);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            });
+            th1.start();
+        }
     }
 
     @Override
@@ -536,14 +595,17 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             txtLog.setText("");
         } else if (id == R.id.action_save_log) {
             saveLog();
-        } else if(id == R.id.action_save_stats) {
+        } else if (id == R.id.action_display_stats) {
+            appendLogUiThread(performanceAnalysis.getStatistics(
+                    p2pDevice != null ? p2pDevice.deviceAddress : ""));
+        } else if (id == R.id.action_save_stats) {
             saveStatistics();
         }
-
         return super.onOptionsItemSelected(item);
     }
 
     private int settingsReqCode = 0x1313;
+
     public void showSettingsDialog() {
         Intent i = new Intent(this, SettingsActivity.class);
         startActivityForResult(i, settingsReqCode);
@@ -552,7 +614,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode == settingsReqCode)
+        if (requestCode == settingsReqCode)
+            //this.recreate();
             setupPreferences();
     }
 
@@ -731,9 +794,9 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         if (!state)
             //Wifi is disabled, so tearDown everything until it is enabled
             tearDownGroupAndReRun(false);
-        else if (!lastWifiState && state)
-            //We are sure now that the change in state is from disabled to enabled, so re-run again
-            tearDownGroupAndReRun();
+        //else if (!lastWifiState && state)
+        //We are sure now that the change in state is from disabled to enabled, so re-run again
+        //tearDownGroupAndReRun();
     }
 
     public void removeWiFiP2pGroup() {
@@ -742,17 +805,19 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
     public void removeWiFiP2pGroup(Boolean removeService) {
         if (wifiP2pManager != null) {
-            wifiP2pManager.removeGroup(wifiP2pChannel, new WifiP2pManager.ActionListener() {
-                @Override
-                public void onSuccess() {
-                    appendLog("Group removed successfully.");
-                }
+            if (p2pInfo != null && p2pInfo.groupFormed) {
+                wifiP2pManager.removeGroup(wifiP2pChannel, new WifiP2pManager.ActionListener() {
+                    @Override
+                    public void onSuccess() {
+                        appendLog("Group removed successfully.");
+                    }
 
-                @Override
-                public void onFailure(int reason) {
-                    appendLog("Group failed to remove");
-                }
-            });
+                    @Override
+                    public void onFailure(int reason) {
+                        appendLog("Group failed to remove");
+                    }
+                });
+            }
 
             if (removeService)
                 removeLegacyApService();
@@ -1378,13 +1443,24 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         appendLogUiThread("THE RANKS ARE AS FOLLOW:\n" + rankStr);
         if (rankStr.contains("YES")) {
             appendLogUiThread("I AM THE BEST, TRYING TO CREATE A GROUP");
-            createWifiP2pGroup();
-            //Moved to Group creation callback
-            //thisDeviceState = ThisDeviceState.GO_ACCEPTING_CONNECTIONS;
-            //sendTearDownHandler.postDelayed(sendTearDownRunnable, mSendTearDownPeriod);
+            if (protocolTestMode == ProtocolTestMode.IP_CONFLICT_TEST) {
+                //As we are just testing the conflict in IPs, we do not have to proceed
+                //in the next EMC steps.
+                runNumber++;
+                tearDownGroupAndReRun();
+            } else if (protocolTestMode == ProtocolTestMode.FULL_EMC_TEST) {
+                createWifiP2pGroup();
+            }
         } else {
             appendLogUiThread("AT LEAST SOMEONE ELSE IS BETTER THAN ME, TRYING TO CHOOSE GROUP");
-            declareGM();
+            if (protocolTestMode == ProtocolTestMode.IP_CONFLICT_TEST) {
+                //As we are just testing the conflict in IPs, we do not have to proceed
+                //in the next EMC steps.
+                runNumber++;
+                tearDownGroupAndReRun();
+            } else if (protocolTestMode == ProtocolTestMode.FULL_EMC_TEST) {
+                declareGM();
+            }
         }
     }
 
@@ -1462,8 +1538,6 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         clearAllServiceRequests();
         resetP2pStructures();
 
-        myProposedIP = DiscoveryPeerInfo.generateProposedIP();
-
         groupSocketPeers.removeAllSocketManagers();
         groupSocketPeers.clear();
 
@@ -1520,26 +1594,31 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         proxyDataHandler = null;
 
         if (reRun) {
-            performanceAnalysis.reset();
+            if (protocolTestMode == ProtocolTestMode.FULL_EMC_TEST) {
+                performanceAnalysis.reset();
+            }
 
             declareGoHandler.postDelayed(declareGoRunnable, mDeclareGoPeriod);
             thisDeviceState = ThisDeviceState.COLLECTING_DEVICE_INFO;
 
             startTimers();
             createDeviceInfoService();
+            myProposedIP = DiscoveryPeerInfo.generateProposedIP();
             appendLogUiThread("My Proposed IP address is [" + myProposedIP + "]");
         }
     }
 
     public synchronized void startTimers() {
         try {
-            sendMyInfoTimer = new Timer("sendMyInfoTimer");
-            sendPeersInfoTimer = new Timer("sendPeersInfoTimer");
+            if (protocolTestMode == ProtocolTestMode.FULL_EMC_TEST) {
+                sendMyInfoTimer = new Timer("sendMyInfoTimer");
+                sendPeersInfoTimer = new Timer("sendPeersInfoTimer");
+                sendMyInfoTimer.schedule(new SendMyInfoTask(), 0, mSendMyInfPeriod);
+                sendPeersInfoTimer.schedule(new SendPeersInfoTask(), 0, mSendPeersInfoPeriod);
+            }
+
             discoverServicesTimer = new Timer("discoverServicesTimer");
             addServicesTimer = new Timer("addServicesTimer");
-
-            sendMyInfoTimer.schedule(new SendMyInfoTask(), 0, mSendMyInfPeriod);
-            sendPeersInfoTimer.schedule(new SendPeersInfoTask(), 0, mSendPeersInfoPeriod);
             discoverServicesTimer.schedule(new DiscoverServicesTask(), 0, mDiscoverServicesPeriod);
             addServicesTimer.schedule(new AddServicesTask(), 0, mAddServicesPeriod);
         } catch (Exception e) {
@@ -1946,12 +2025,19 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         FINISHED,
     }
 
+    public enum ProtocolTestMode {
+        FULL_EMC_TEST,
+        IP_CONFLICT_TEST,
+        NO_TEST,
+        GROUP_FORMATION_TEST
+    }
+
     class WifiBroadcastReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
 
-            appendLogUiThread("=========" + action + "=========", true);
+            //appendLogUiThread("=========" + action + "=========", true);
 
             if (WifiManager.NETWORK_IDS_CHANGED_ACTION.equals(action)) {
 
@@ -1963,11 +2049,11 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
             } else if (WifiManager.SUPPLICANT_STATE_CHANGED_ACTION.equals(action)) {
                 final SupplicantState supplicantState = intent.getParcelableExtra(WifiManager.EXTRA_NEW_STATE);
-                appendLogUiThread("----" + supplicantState.toString() + "----");
+                //appendLogUiThread("----" + supplicantState.toString() + "----");
 
                 if (supplicantState == SupplicantState.ASSOCIATED) {
                     wifiSupplicantAssociated = true;
-                    appendLogUiThread("+++++Allah Akbar+++++");
+                    //appendLogUiThread("+++++Allah Akbar+++++");
                 }
             }
         }

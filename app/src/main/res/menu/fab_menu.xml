@@ -21,8 +21,29 @@
         android:orderInCategory="4"
         android:title="@string/action_list_services" />
     <item
+        android:id="@+id/action_ip_conflict_test"
+        android:icon="@drawable/ic_action_ip_conflict_test"
+        android:orderInCategory="5"
+        android:title="@string/action_ip_conflict_test" />
+    <item
+        android:id="@+id/action_group_formation_test"
+        android:icon="@drawable/ic_action_group_formation_test"
+        android:orderInCategory="6"
+        android:title="@string/action_group_formation_test" />
+    <item
+        android:id="@+id/action_emc_full"
+        android:icon="@drawable/ic_action_emc_full"
+        android:orderInCategory="7"
+        android:title="@string/action_emc_full" />
+    <item
+        android:id="@+id/action_stop_tests"
+        android:icon="@drawable/ic_action_stop_tests"
+        android:orderInCategory="8"
+        android:title="@string/action_stop_tests" />
+    <item
         android:id="@+id/action_continuous_data"
         android:icon="@drawable/ic_action_continuous_data"
-        android:orderInCategory="5"
+        android:orderInCategory="10"
         android:title="@string/action_continuous_data" />
+
 </menu>

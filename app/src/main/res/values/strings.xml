@@ -73,5 +73,10 @@
     <string name="pref_title_proxy_data_port">Proxy Data Port</string>
     <string name="action_save_stats">Save Statistics to File</string>
     <string name="action_continuous_data">Continuous Data Streaming</string>
+    <string name="action_display_stats">Display Statistics</string>
+    <string name="action_ip_conflict_test">IP Conflict Test</string>
+    <string name="action_emc_full">EMC Full Test</string>
+    <string name="action_group_formation_test">Group Formation Test</string>
+    <string name="action_stop_tests">Stop Tests</string>
     <integer name="pref_default_proxy_data_port">4543</integer>
 </resources>

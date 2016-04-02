@@ -25,7 +25,7 @@ public class WiFiP2pBroadcastReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         final String action = intent.getAction();
 
-        activity.appendLogUiThread("p2p=========" + action + "========", true);
+        //activity.appendLogUiThread("p2p=========" + action + "========", true);
 
         if (WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION.equals(action)) {
             // Determine if Wifi P2P mode is enabled or not, alert
@@ -55,7 +55,7 @@ public class WiFiP2pBroadcastReceiver extends BroadcastReceiver {
             final NetworkInfo networkInfo = (NetworkInfo) intent
                     .getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
 
-            activity.appendLogUiThread("p2p---" + networkInfo.toString() + "---", true);
+            //activity.appendLogUiThread("p2p---" + networkInfo.toString() + "---", true);
 
             if (networkInfo.isConnected()) {
 
