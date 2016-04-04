@@ -47,10 +47,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.nio.ByteOrder;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -88,6 +85,9 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     public static int mSendNearbyLegacyApsInfoPeriod;
     public static int mSendTearDownPeriod;
 
+    //Testing parameters
+    public static int mRequestedNoOfRuns;
+
     public static WifiP2pInfo p2pInfo = null;
     public static WifiP2pGroup p2pGroup = null;
     public static WifiP2pDevice p2pDevice = null;
@@ -103,7 +103,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     private final PerformanceAnalysis performanceAnalysis = new PerformanceAnalysis();
 
     public ThisDeviceState thisDeviceState = ThisDeviceState.STARTED;
-    public ProtocolTestMode protocolTestMode = ProtocolTestMode.NO_TEST;
+    public PerformanceAnalysis.ProtocolTestMode protocolTestMode = PerformanceAnalysis.ProtocolTestMode.NO_TEST;
 
     public int myProposedIP = DiscoveryPeerInfo.generateProposedIP();
 
@@ -113,10 +113,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
     private boolean streamingStarted = false;
     private boolean requestRun = false;
-    private int runNumber = 1;
 
-
-    private Thread th1, th2;
     private Thread mgntHandler = null;
     private Thread dataHandler = null;
     private Thread proxyMgntHandler = null;
@@ -187,8 +184,12 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     private final Runnable tearDownRunnable = new Runnable() {
         @Override
         public void run() {
-            tearDownGroupAndReRun();
-            runNumber++;
+            if (mRequestedNoOfRuns == -1) {
+                tearDownGroupAndReRun();
+                performanceAnalysis.runNumber++;
+            } else if (mRequestedNoOfRuns == performanceAnalysis.runNumber) {
+                stopAllTests();
+            }
         }
     };
     private final Runnable sendTearDownRunnable = new Runnable() {
@@ -263,6 +264,9 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             mSendNearbyLegacyApsInfoPeriod = Integer.parseInt(sharedPreferences.getString(PREF_SEND_NEARBY_LEGACY_APS_INFO_PERIOD, String.valueOf(pInt)));
             pInt = getResources().getInteger(R.integer.pref_default_send_tear_down);
             mSendTearDownPeriod = Integer.parseInt(sharedPreferences.getString(PREF_SEND_TEAR_DOWN_PERIOD, String.valueOf(pInt)));
+
+            pInt = getResources().getInteger(R.integer.pref_default_requested_no_of_runs);
+            mRequestedNoOfRuns = Integer.parseInt(sharedPreferences.getString(PREF_REQUESTED_NO_OF_RUNS, String.valueOf(pInt)));
         }
     }
 
@@ -440,16 +444,16 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
 
     private void startEmcFullTest() {
-        runNumber = 0;
+        performanceAnalysis.runNumber = 1;
         appendLogUiThread("[*] Starting EMC Full Test .................\n");
-        protocolTestMode = ProtocolTestMode.FULL_EMC_TEST;
+        protocolTestMode = PerformanceAnalysis.ProtocolTestMode.FULL_EMC_TEST;
         tearDownGroupAndReRun();
     }
 
     private void startIpConflictTest() {
-        runNumber = 0;
+        performanceAnalysis.runNumber = 1;
         appendLogUiThread("[*] Starting IP Conflict Test .................\n");
-        protocolTestMode = ProtocolTestMode.IP_CONFLICT_TEST;
+        protocolTestMode = PerformanceAnalysis.ProtocolTestMode.IP_CONFLICT_TEST;
         tearDownGroupAndReRun();
     }
 
@@ -457,8 +461,13 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         saveLog();
         clearLog();
         saveStatistics();
-        protocolTestMode = ProtocolTestMode.NO_TEST;
+        displayStatistics();
+        protocolTestMode = PerformanceAnalysis.ProtocolTestMode.NO_TEST;
         tearDownGroupAndReRun(false);
+    }
+
+    private void displayStatistics() {
+        txtLog.setText(performanceAnalysis.getStatistics(p2pDevice != null ? p2pDevice.deviceAddress : ""));
     }
 
     private void saveStatistics() {
@@ -494,18 +503,20 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
     @NonNull
     private String getHeaderString() {
-        return "EMC RUN NUMBER: " + runNumber + "\n"
+        return "...................EMC....................\n"
+                + "NUMBER OF RUNS: " + performanceAnalysis.runNumber + "\n"
                 + "TEST TYPE: " + protocolTestMode.toString() + "\n"
                 + "DATE: " + Calendar.getInstance().getTime().toString() + "\n"
                 + "DEVICE MODEL: " + Build.MODEL + "\n"
-                + "DEVICE NAME: " + (p2pDevice != null ? p2pDevice.deviceName : "") + "\n";
+                + "DEVICE NAME: " + (p2pDevice != null ? p2pDevice.deviceName : "") + "\n"
+                + ".........................................\n\n";
     }
 
     private void streamContinuousData() {
         if ((thisDeviceState == ThisDeviceState.GM_COMMUNICATING_WITH_GO)
                 || thisDeviceState == ThisDeviceState.GO_ACCEPTING_CONNECTIONS) {
             streamingStarted = true;
-            th1 = new Thread(new Runnable() {
+            Thread th2 = new Thread(new Runnable() {
                 @Override
                 public void run() {
                     String randomDataToSend = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
@@ -524,7 +535,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                     }
                 }
             });
-            th1.start();
+            th2.start();
         }
     }
 
@@ -1231,6 +1242,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                             if (scanResult.SSID.equals(SSID)) {
                                 configureAndConnectToLegacyAp(scanResult.BSSID, SSID, passPhrase);
 
+                                performanceAnalysis.bePmCount++;
                                 //Try opening sockets connections with legacyAp
                                 openLegacySocketConnections();
                                 break;
@@ -1265,7 +1277,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                 appendLogUiThread("Enabling legacy WiFi succeeded.");
                 sleep(500);
                 WifiInfo conInfo = wifiManager.getConnectionInfo();
-                appendLogUiThread(convertIntToIpAddress(conInfo.getIpAddress())
+                appendLogUiThread(Utilities.convertIntToIpAddress(conInfo.getIpAddress())
                         + " -> " + conInfo.getSSID() + ", " + conInfo.getSupplicantState());
             } else {
                 appendLogUiThread("Enabling legacy WiFi failed [netid=" + newNetId + "]");
@@ -1297,6 +1309,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                 decideGroupHandler.removeCallbacks(decideGroupRunnable);
                 thisDeviceState = ThisDeviceState.GM_COMMUNICATING_WITH_GO;
                 appendLogUiThread("Connected to GO successfully -> " + device.deviceName);
+
+                performanceAnalysis.beGmCount++;
 
                 //To account for device losing connection with GO, we schedule a teardown
                 tearDownHandler.postDelayed(tearDownRunnable, mSendTearDownPeriod + 1000);
@@ -1392,26 +1406,6 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         appendLog(str);
     }
 
-    //Adapted from http://stackoverflow.com/questions/16730711/get-my-wifi-ip-address-android
-    private String convertIntToIpAddress(int ipAddress) {
-        // Convert little-endian to big-endianif needed
-        if (ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN)) {
-            ipAddress = Integer.reverseBytes(ipAddress);
-        }
-
-        byte[] ipByteArray = BigInteger.valueOf(ipAddress).toByteArray();
-
-        String ipAddressString;
-        try {
-            ipAddressString = InetAddress.getByAddress(ipByteArray).getHostAddress();
-        } catch (UnknownHostException ex) {
-            Log.e("WIFIIP", "Unable to get host address.");
-            ipAddressString = null;
-        }
-
-        return ipAddressString;
-    }
-
     private void tapAcceptInvitationAutomatically() {
         Thread thrd = new Thread(new Runnable() {
             @Override
@@ -1443,22 +1437,35 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         appendLogUiThread("THE RANKS ARE AS FOLLOW:\n" + rankStr);
         if (rankStr.contains("YES")) {
             appendLogUiThread("I AM THE BEST, TRYING TO CREATE A GROUP");
-            if (protocolTestMode == ProtocolTestMode.IP_CONFLICT_TEST) {
-                //As we are just testing the conflict in IPs, we do not have to proceed
-                //in the next EMC steps.
-                runNumber++;
-                tearDownGroupAndReRun();
-            } else if (protocolTestMode == ProtocolTestMode.FULL_EMC_TEST) {
+            performanceAnalysis.beGoCount++;
+            if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.IP_CONFLICT_TEST) {
+                if (mRequestedNoOfRuns == -1) {
+                    //As we are just testing the conflict in IPs, we do not have to proceed
+                    //in the next EMC steps.
+                    performanceAnalysis.runNumber++;
+                    tearDownGroupAndReRun();
+                } else if (mRequestedNoOfRuns == performanceAnalysis.runNumber) {
+                    stopAllTests();
+                }
+            } else if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.FULL_EMC_TEST) {
                 createWifiP2pGroup();
             }
         } else {
             appendLogUiThread("AT LEAST SOMEONE ELSE IS BETTER THAN ME, TRYING TO CHOOSE GROUP");
-            if (protocolTestMode == ProtocolTestMode.IP_CONFLICT_TEST) {
-                //As we are just testing the conflict in IPs, we do not have to proceed
-                //in the next EMC steps.
-                runNumber++;
-                tearDownGroupAndReRun();
-            } else if (protocolTestMode == ProtocolTestMode.FULL_EMC_TEST) {
+            if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.IP_CONFLICT_TEST) {
+                if (mRequestedNoOfRuns == -1) {
+                    //As we are just testing the conflict in IPs, we do not have to proceed
+                    //in the next EMC steps.
+                    performanceAnalysis.runNumber++;
+                    //The no. of times of being GM should not increased here, as the device may retry
+                    //several times before connecting actually to a group. However, as we are testing
+                    //for ip conflicts only, we are not going to suffer from this problem.
+                    performanceAnalysis.beGmCount++;
+                    tearDownGroupAndReRun();
+                } else if (mRequestedNoOfRuns == performanceAnalysis.runNumber) {
+                    stopAllTests();
+                }
+            } else if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.FULL_EMC_TEST) {
                 declareGM();
             }
         }
@@ -1593,10 +1600,11 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         proxyMgntHandler = null;
         proxyDataHandler = null;
 
+        if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.NO_TEST) {
+            performanceAnalysis.reset();
+        }
+
         if (reRun) {
-            if (protocolTestMode == ProtocolTestMode.FULL_EMC_TEST) {
-                performanceAnalysis.reset();
-            }
 
             declareGoHandler.postDelayed(declareGoRunnable, mDeclareGoPeriod);
             thisDeviceState = ThisDeviceState.COLLECTING_DEVICE_INFO;
@@ -1610,7 +1618,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
     public synchronized void startTimers() {
         try {
-            if (protocolTestMode == ProtocolTestMode.FULL_EMC_TEST) {
+            if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.FULL_EMC_TEST) {
                 sendMyInfoTimer = new Timer("sendMyInfoTimer");
                 sendPeersInfoTimer = new Timer("sendPeersInfoTimer");
                 sendMyInfoTimer.schedule(new SendMyInfoTask(), 0, mSendMyInfPeriod);
@@ -1862,7 +1870,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
     private void openLegacySocketConnections() {
         try {
-            th1 = new Thread(new Runnable() {
+            Thread th1 = new Thread(new Runnable() {
                 @Override
                 public void run() {
                     if (wifiManager != null) {
@@ -1912,7 +1920,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         if (wifiManager != null) {
             if (wifiManager.getWifiState() == WifiManager.WIFI_STATE_ENABLED) {
                 if (wifiManager.getConnectionInfo().getSupplicantState() == SupplicantState.COMPLETED)
-                    ipAddress = convertIntToIpAddress(wifiManager.getDhcpInfo().serverAddress);
+                    ipAddress = Utilities.convertIntToIpAddress(wifiManager.getDhcpInfo().serverAddress);
             }
         }
         return ipAddress;
@@ -2023,13 +2031,6 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         GM_SELECTING_GO,
         GM_COMMUNICATING_WITH_GO,
         FINISHED,
-    }
-
-    public enum ProtocolTestMode {
-        FULL_EMC_TEST,
-        IP_CONFLICT_TEST,
-        NO_TEST,
-        GROUP_FORMATION_TEST
     }
 
     class WifiBroadcastReceiver extends BroadcastReceiver {

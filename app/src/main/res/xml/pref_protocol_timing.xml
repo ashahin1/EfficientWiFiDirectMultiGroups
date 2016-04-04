@@ -3,35 +3,14 @@
 
     <!-- NOTE: EditTextPreference accepts EditText attributes. -->
     <!-- NOTE: EditTextPreference's summary should be set to its value by the activity code. -->
-    <EditTextPreference
-        android:capitalize="words"
-        android:defaultValue="@integer/pref_default_send_my_info"
-        android:inputType="number"
-        android:numeric="integer"
-        android:key="send_my_info_text"
-        android:maxLines="1"
-        android:selectAllOnFocus="true"
-        android:singleLine="true"
-        android:title="@string/pref_title_send_my_info" />
-
-    <EditTextPreference
-        android:capitalize="words"
-        android:defaultValue="@integer/pref_default_send_peers_info"
-        android:inputType="number"
-        android:numeric="integer"
-        android:key="send_peers_info_text"
-        android:maxLines="1"
-        android:selectAllOnFocus="true"
-        android:singleLine="true"
-        android:title="@string/pref_title_send_peers_info" />
 
     <EditTextPreference
         android:capitalize="words"
         android:defaultValue="@integer/pref_default_discover_services"
         android:inputType="number"
-        android:numeric="integer"
         android:key="discover_services_text"
         android:maxLines="1"
+        android:numeric="integer"
         android:selectAllOnFocus="true"
         android:singleLine="true"
         android:title="@string/pref_title_discover_services" />
@@ -40,9 +19,9 @@
         android:capitalize="words"
         android:defaultValue="@integer/pref_default_add_services"
         android:inputType="number"
-        android:numeric="integer"
         android:key="add_services_text"
         android:maxLines="1"
+        android:numeric="integer"
         android:selectAllOnFocus="true"
         android:singleLine="true"
         android:title="@string/pref_title_add_services" />
@@ -51,9 +30,9 @@
         android:capitalize="words"
         android:defaultValue="@integer/pref_default_declare_go"
         android:inputType="number"
-        android:numeric="integer"
         android:key="declare_go_text"
         android:maxLines="1"
+        android:numeric="integer"
         android:selectAllOnFocus="true"
         android:singleLine="true"
         android:title="@string/pref_title_declare_go" />
@@ -62,42 +41,64 @@
         android:capitalize="words"
         android:defaultValue="@integer/pref_default_decide_group"
         android:inputType="number"
-        android:numeric="integer"
         android:key="decide_group_text"
         android:maxLines="1"
+        android:numeric="integer"
         android:selectAllOnFocus="true"
         android:singleLine="true"
         android:title="@string/pref_title_decide_group" />
 
     <EditTextPreference
         android:capitalize="words"
-        android:defaultValue="@integer/pref_default_decide_proxy"
-        android:inputType="number"
-        android:numeric="integer"
-        android:key="decide_proxy_text"
-        android:maxLines="1"
-        android:selectAllOnFocus="true"
-        android:singleLine="true"
-        android:title="@string/pref_title_decide_proxy" />
-
-    <EditTextPreference
-        android:capitalize="words"
         android:defaultValue="@integer/pref_default_send_nearby_legacy_aps_info"
         android:inputType="number"
-        android:numeric="integer"
         android:key="send_nearby_legacy_aps_text"
         android:maxLines="1"
+        android:numeric="integer"
         android:selectAllOnFocus="true"
         android:singleLine="true"
         android:title="@string/pref_title_send_nearby_legacy_aps_info" />
 
     <EditTextPreference
         android:capitalize="words"
+        android:defaultValue="@integer/pref_default_decide_proxy"
+        android:inputType="number"
+        android:key="decide_proxy_text"
+        android:maxLines="1"
+        android:numeric="integer"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_decide_proxy" />
+
+    <EditTextPreference
+        android:capitalize="words"
+        android:defaultValue="@integer/pref_default_send_my_info"
+        android:inputType="number"
+        android:key="send_my_info_text"
+        android:maxLines="1"
+        android:numeric="integer"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_send_my_info" />
+
+    <EditTextPreference
+        android:capitalize="words"
+        android:defaultValue="@integer/pref_default_send_peers_info"
+        android:inputType="number"
+        android:key="send_peers_info_text"
+        android:maxLines="1"
+        android:numeric="integer"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_send_peers_info" />
+
+    <EditTextPreference
+        android:capitalize="words"
         android:defaultValue="@integer/pref_default_send_tear_down"
         android:inputType="number"
-        android:numeric="integer"
         android:key="send_tear_down_text"
         android:maxLines="1"
+        android:numeric="integer"
         android:selectAllOnFocus="true"
         android:singleLine="true"
         android:title="@string/pref_title_send_tear_down" />

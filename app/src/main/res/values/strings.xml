@@ -9,6 +9,13 @@
     <string name="action_discover_peers">Discover Peers</string>
     <string name="action_create_service">Create Service</string>
     <string name="action_list_services">List Services</string>
+    <string name="action_save_stats">Save Statistics to File</string>
+    <string name="action_continuous_data">Continuous Data Streaming</string>
+    <string name="action_display_stats">Display Statistics</string>
+    <string name="action_ip_conflict_test">IP Conflict Test</string>
+    <string name="action_emc_full">EMC Full Test</string>
+    <string name="action_group_formation_test">Group Formation Test</string>
+    <string name="action_stop_tests">Stop Tests</string>
     <string name="btn_send">Send</string>
     <string name="action_save_log">Save Log to File</string>
     <string name="title_activity_settings">Settings</string>
@@ -71,12 +78,10 @@
     <integer name="pref_default_proxy_management_port">4544</integer>
 
     <string name="pref_title_proxy_data_port">Proxy Data Port</string>
-    <string name="action_save_stats">Save Statistics to File</string>
-    <string name="action_continuous_data">Continuous Data Streaming</string>
-    <string name="action_display_stats">Display Statistics</string>
-    <string name="action_ip_conflict_test">IP Conflict Test</string>
-    <string name="action_emc_full">EMC Full Test</string>
-    <string name="action_group_formation_test">Group Formation Test</string>
-    <string name="action_stop_tests">Stop Tests</string>
     <integer name="pref_default_proxy_data_port">4543</integer>
+
+    <!-- Setting for Testing Parameters -->
+    <string name="pref_header_testing_parameters">Testing Parameters</string>
+    <string name="pref_title_requested_no_of_runs">Requested No. Of Runs</string>
+    <integer name="pref_default_requested_no_of_runs">-1</integer>
 </resources>

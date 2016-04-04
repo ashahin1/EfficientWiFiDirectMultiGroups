@@ -168,8 +168,19 @@ public class DiscoveryPeersInfo implements ProtocolConstants {
                         + rank + "\n";
             }
         }
+
         selectedGoPeer = first;
         spareGoPeer = second;
+        //Now based on the number of members on each group we decide which group to join
+        if (second != null ) {
+            int num2 = second.numOfMembers;
+            int num1 = first.numOfMembers;
+
+            if(num2 < num1){
+                selectedGoPeer = second;
+                spareGoPeer = first;
+            }
+        }
 
         return rankStr;
     }

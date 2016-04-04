@@ -15,6 +15,10 @@ public class PerformanceAnalysis {
     public int sentManagementSocketMessagesCount = 0;
     public int sentDataSocketMessagesCount = 0;
     public int conflictIpCount = 0;
+    public int runNumber = 1;
+    public int beGoCount = 0;
+    public int beGmCount = 0;
+    public int bePmCount = 0;
 
     //TODO: Add proxy mgmnt/data stats
     public void addDiscoveryStatistic(String discoveryPeerMacAddr, int length, boolean deviceInfo) {
@@ -104,9 +108,7 @@ public class PerformanceAnalysis {
 
         for (DiscoveryPeerStatistics peerStats : discoveryPeerStatisticsList) {
             if (peerStats.discoveryPeerMacAddr != null) {
-                pStr += String.format(Locale.US, "****Discovery Stats for Device [%s]****\n", peerStats.discoveryPeerMacAddr);
-                pStr += String.format(Locale.US, "===DeviceInfo Msg Stats==\n%s", peerStats.deviceInfoMessageCounter.toString());
-                pStr += String.format(Locale.US, "===LegacyAp Msg Stats==\n%s", peerStats.legacyApMessageCounter.toString());
+                pStr += peerStats.getStatistics();
 
                 totalDeviceInfoCount += peerStats.deviceInfoMessageCounter.getTotalNumberOfMessages();
                 totalLegacyApCount += peerStats.legacyApMessageCounter.getTotalNumberOfMessages();
@@ -115,9 +117,7 @@ public class PerformanceAnalysis {
 
         for (SocketPeerStatistics peerStats : socketPeerStatisticsList) {
             if (peerStats.socketPeerIpAddr != null) {
-                pStr += String.format(Locale.US, "****Socket Stats for Device [%s,%s]****\n", peerStats.socketPeerMacAddr, peerStats.socketPeerIpAddr);
-                pStr += String.format(Locale.US, "===Management Stats==\n%s", peerStats.managementSocketMessageCounter.toString());
-                pStr += String.format(Locale.US, "===Data Stats==\n%s", peerStats.dataSocketMessageCounter.toString());
+                pStr += peerStats.getStatistics();
 
                 totalMgtCount += peerStats.managementSocketMessageCounter.getTotalNumberOfMessages();
                 totalDataCount += peerStats.dataSocketMessageCounter.getTotalNumberOfMessages();
@@ -130,19 +130,25 @@ public class PerformanceAnalysis {
                         "Total Management Msg Sent: %d\n" +
                         "Total Data Msg Sent: %d\n" +
                         "Total IP Conflicts: %d\n" +
+                        "Total Times of Being GO: %d\n" +
+                        "Total Times of Being GM: %d\n" +
+                        "Total Times of Being PM: %d\n" +
                         "----------------------------------------------------------\n" +
-                        "----------Peers Info---------------------\n" +
+                        "----------------Peers Info---------------------\n" +
                         "Total Device Info Received: %d\n" +
-                        "Total LegacyAp Received: %d\n" +
+                        "Total LegacyAp Info Received: %d\n" +
                         "Total Management Msg Received: %d\n" +
-                        "Total Data Msg Received: %d\n" +
+                        "Total Data Msg Received: %d\n\n" +
                         "%s" +
-                        "-----------------------------------------\n"
+                        "------------------------------------------------\n"
                 , thisDeviceMAC
                 , sentServiceDiscoveryRequestCount
                 , sentManagementSocketMessagesCount
                 , sentDataSocketMessagesCount
                 , conflictIpCount
+                , beGoCount
+                , beGmCount
+                , bePmCount
                 , totalDeviceInfoCount
                 , totalLegacyApCount
                 , totalMgtCount
@@ -157,9 +163,20 @@ public class PerformanceAnalysis {
         sentManagementSocketMessagesCount = 0;
         sentDataSocketMessagesCount = 0;
         conflictIpCount = 0;
+        runNumber = 1;
+        beGoCount = 0;
+        beGmCount = 0;
+        bePmCount = 0;
 
         discoveryPeerStatisticsList.clear();
         socketPeerStatisticsList.clear();
+    }
+
+    public enum ProtocolTestMode {
+        FULL_EMC_TEST,
+        IP_CONFLICT_TEST,
+        NO_TEST,
+        GROUP_FORMATION_TEST
     }
 }
 
@@ -168,6 +185,16 @@ class DiscoveryPeerStatistics {
     public final MessageCounter legacyApMessageCounter = new MessageCounter();
     //public DiscoveryPeerInfo discoveryPeerInfo = null;
     public String discoveryPeerMacAddr = null;
+
+    public String getStatistics() {
+        String str = "";
+
+        str += String.format(Locale.US, "*******Discovery Stats for Device [%s]*******\n", discoveryPeerMacAddr);
+        str += String.format(Locale.US, "======DeviceInfo Msg Stats=====\n%s", deviceInfoMessageCounter.toString());
+        str += String.format(Locale.US, "=======LegacyAp Msg Stats======\n%s", legacyApMessageCounter.toString());
+
+        return str;
+    }
 }
 
 class SocketPeerStatistics {
@@ -176,6 +203,16 @@ class SocketPeerStatistics {
     //public SocketPeer socketPeer = null;
     public String socketPeerIpAddr = null;
     public String socketPeerMacAddr = null;
+
+    public String getStatistics() {
+
+        String str = "";
+        str += String.format(Locale.US, "*******Socket Stats for Device [%s,%s]*******\n", socketPeerMacAddr, socketPeerIpAddr);
+        str += String.format(Locale.US, "======Management Stats=====\n%s", managementSocketMessageCounter.toString());
+        str += String.format(Locale.US, "=========Data Stats========\n%s", dataSocketMessageCounter.toString());
+
+        return str;
+    }
 }
 
 class MessageCounter {
@@ -222,11 +259,10 @@ class MessageCounter {
 
 
     public float getBandwidth() {
-        float bw = 0;
         long curTime = System.currentTimeMillis();
         long timeDiff = curTime - startTime;
 
-        bw = (getTotalLength() * 1000.0f) / (timeDiff * 1.0f);
+        float bw = (getTotalLength() * 1000.0f) / (timeDiff * 1.0f);
 
         return bw;
     }
@@ -242,7 +278,7 @@ class MessageCounter {
 
         str += String.format(Locale.US, "Total Number of Messages: %d\n", getTotalNumberOfMessages());
         str += String.format(Locale.US, "Total Length of Messages: %d\n", getTotalLength());
-        str += String.format(Locale.US, "Bandwidth: %f\n\n", getBandwidth());
+        str += String.format(Locale.US, "Bandwidth: %f Bytes/Sec\n\n", getBandwidth());
         str += String.format(Locale.US, "%20s%20s\n", "Length", "Count");
         str += String.format(Locale.US, "%40s\n", " ").replace(" ", "-");
         for (int keyLength :

@@ -54,4 +54,7 @@ public interface ProtocolConstants {
     String PREF_DECIDE_PROXY_PERIOD = "decide_proxy_text";
     String PREF_SEND_NEARBY_LEGACY_APS_INFO_PERIOD = "send_nearby_legacy_aps_text";
     String PREF_SEND_TEAR_DOWN_PERIOD = "send_tear_down_text";
+
+    //Pref_Keys for testing parameters
+    String PREF_REQUESTED_NO_OF_RUNS = "requested_no_of_runs_text";
 }

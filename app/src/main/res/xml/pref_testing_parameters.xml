@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <EditTextPreference
+        android:capitalize="words"
+        android:defaultValue="@integer/pref_default_requested_no_of_runs"
+        android:inputType="number"
+        android:numeric="integer"
+        android:key="requested_no_of_runs_text"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_requested_no_of_runs" />
+</PreferenceScreen>

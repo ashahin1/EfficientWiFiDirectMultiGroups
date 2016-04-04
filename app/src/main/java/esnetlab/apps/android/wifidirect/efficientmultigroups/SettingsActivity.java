@@ -30,7 +30,7 @@ import java.util.List;
  * href="http://developer.android.com/guide/topics/ui/settings.html">Settings
  * API Guide</a> for more information on developing a Settings UI.
  */
-public class SettingsActivity extends AppCompatPreferenceActivity {
+public class SettingsActivity extends AppCompatPreferenceActivity implements ProtocolConstants {
     /**
      * A preference value change listener that updates the preference's summary
      * to reflect its new value.
@@ -139,37 +139,29 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
      */
     protected boolean isValidFragment(String fragmentName) {
         return PreferenceFragment.class.getName().equals(fragmentName)
-                || GeneralPreferenceFragment.class.getName().equals(fragmentName)
+                || ProtocolTimingPreferenceFragment.class.getName().equals(fragmentName)
                 || PortsPreferenceFragment.class.getName().equals(fragmentName)
-                || RankingParametersPreferenceFragment.class.getName().equals(fragmentName);
+                || RankingParametersPreferenceFragment.class.getName().equals(fragmentName)
+                || TestingParametersPreferenceFragment.class.getName().equals(fragmentName);
     }
 
-    /**
-     * This fragment shows general preferences only. It is used when the
-     * activity is showing a two-pane settings UI.
-     */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public static class GeneralPreferenceFragment extends PreferenceFragment {
+    public static class ProtocolTimingPreferenceFragment extends PreferenceFragment {
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.pref_protocol_timing);
             setHasOptionsMenu(true);
 
-            // Bind the summaries of EditText/List/Dialog/Ringtone preferences
-            // to their values. When their values change, their summaries are
-            // updated to reflect the new value, per the Android Design
-            // guidelines.
-            bindPreferenceSummaryToValue(findPreference("send_my_info_text"));
-            bindPreferenceSummaryToValue(findPreference("send_peers_info_text"));
-            bindPreferenceSummaryToValue(findPreference("discover_services_text"));
-            bindPreferenceSummaryToValue(findPreference("add_services_text"));
-            bindPreferenceSummaryToValue(findPreference("declare_go_text"));
-            bindPreferenceSummaryToValue(findPreference("decide_group_text"));
-            bindPreferenceSummaryToValue(findPreference("send_peers_info_text"));
-            bindPreferenceSummaryToValue(findPreference("decide_proxy_text"));
-            bindPreferenceSummaryToValue(findPreference("send_nearby_legacy_aps_text"));
-            bindPreferenceSummaryToValue(findPreference("send_tear_down_text"));
+            bindPreferenceSummaryToValue(findPreference(PREF_SEND_MY_INF_PERIOD));
+            bindPreferenceSummaryToValue(findPreference(PREF_SEND_PEERS_INFO_PERIOD));
+            bindPreferenceSummaryToValue(findPreference(PREF_DISCOVER_SERVICES_PERIOD));
+            bindPreferenceSummaryToValue(findPreference(PREF_ADD_SERVICES_PERIOD));
+            bindPreferenceSummaryToValue(findPreference(PREF_DECLARE_GO_PERIOD));
+            bindPreferenceSummaryToValue(findPreference(PREF_DECIDE_GROUP_PERIOD));
+            bindPreferenceSummaryToValue(findPreference(PREF_DECIDE_PROXY_PERIOD));
+            bindPreferenceSummaryToValue(findPreference(PREF_SEND_NEARBY_LEGACY_APS_INFO_PERIOD));
+            bindPreferenceSummaryToValue(findPreference(PREF_SEND_TEAR_DOWN_PERIOD));
         }
 
         @Override
@@ -183,10 +175,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
         }
     }
 
-    /**
-     * This fragment shows notification preferences only. It is used when the
-     * activity is showing a two-pane settings UI.
-     */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class RankingParametersPreferenceFragment extends PreferenceFragment {
         @Override
@@ -195,14 +183,10 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             addPreferencesFromResource(R.xml.pref_ranking_parameters);
             setHasOptionsMenu(true);
 
-            // Bind the summaries of EditText/List/Dialog/Ringtone preferences
-            // to their values. When their values change, their summaries are
-            // updated to reflect the new value, per the Android Design
-            // guidelines.
-            bindPreferenceSummaryToValue(findPreference("rank_alpha_text"));
-            bindPreferenceSummaryToValue(findPreference("rank_beta_text"));
-            bindPreferenceSummaryToValue(findPreference("rank_gamma_text"));
-            bindPreferenceSummaryToValue(findPreference("rank_max_capacity_text"));
+            bindPreferenceSummaryToValue(findPreference(PREF_RANK_ALPHA));
+            bindPreferenceSummaryToValue(findPreference(PREF_RANK_BETA));
+            bindPreferenceSummaryToValue(findPreference(PREF_RANK_GAMMA));
+            bindPreferenceSummaryToValue(findPreference(PREF_RANK_MAX_CAPACITY));
         }
 
         @Override
@@ -216,10 +200,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
         }
     }
 
-    /**
-     * This fragment shows data and sync preferences only. It is used when the
-     * activity is showing a two-pane settings UI.
-     */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class PortsPreferenceFragment extends PreferenceFragment {
         @Override
@@ -228,14 +208,32 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             addPreferencesFromResource(R.xml.pref_ports);
             setHasOptionsMenu(true);
 
-            // Bind the summaries of EditText/List/Dialog/Ringtone preferences
-            // to their values. When their values change, their summaries are
-            // updated to reflect the new value, per the Android Design
-            // guidelines.
-            bindPreferenceSummaryToValue(findPreference("group_management_port_text"));
-            bindPreferenceSummaryToValue(findPreference("group_data_port_text"));
-            bindPreferenceSummaryToValue(findPreference("proxy_management_port_text"));
-            bindPreferenceSummaryToValue(findPreference("proxy_data_port_text"));
+            bindPreferenceSummaryToValue(findPreference(PREF_MGMNT_PORT));
+            bindPreferenceSummaryToValue(findPreference(PREF_DATA_PORT));
+            bindPreferenceSummaryToValue(findPreference(PREF_PROXY_MGMNT_PORT));
+            bindPreferenceSummaryToValue(findPreference(PREF_PROXY_DATA_PORT));
+        }
+
+        @Override
+        public boolean onOptionsItemSelected(MenuItem item) {
+            int id = item.getItemId();
+            if (id == android.R.id.home) {
+                startActivity(new Intent(getActivity(), SettingsActivity.class));
+                return true;
+            }
+            return super.onOptionsItemSelected(item);
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    public static class TestingParametersPreferenceFragment extends PreferenceFragment {
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            addPreferencesFromResource(R.xml.pref_testing_parameters);
+            setHasOptionsMenu(true);
+
+            bindPreferenceSummaryToValue(findPreference(PREF_REQUESTED_NO_OF_RUNS));
         }
 
         @Override

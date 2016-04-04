@@ -6,10 +6,13 @@ import android.util.Log;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.nio.ByteOrder;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Enumeration;
@@ -57,6 +60,26 @@ public class Utilities {
             ex.printStackTrace();
         }
         return null;
+    }
+
+    //Adapted from http://stackoverflow.com/questions/16730711/get-my-wifi-ip-address-android
+    public static String convertIntToIpAddress(int ipAddress) {
+        // Convert little-endian to big-endianif needed
+        if (ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN)) {
+            ipAddress = Integer.reverseBytes(ipAddress);
+        }
+
+        byte[] ipByteArray = BigInteger.valueOf(ipAddress).toByteArray();
+
+        String ipAddressString;
+        try {
+            ipAddressString = InetAddress.getByAddress(ipByteArray).getHostAddress();
+        } catch (UnknownHostException ex) {
+            Log.e("WIFIIP", "Unable to get host address.");
+            ipAddressString = null;
+        }
+
+        return ipAddressString;
     }
 
     //Taken from -> https://code.google.com/p/android-wifi-connecter/

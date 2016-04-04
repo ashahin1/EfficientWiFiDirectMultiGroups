@@ -3,7 +3,7 @@
     <!-- These settings headers are only used on tablets. -->
 
     <header
-        android:fragment="esnetlab.apps.android.wifidirect.efficientmultigroups.SettingsActivity$GeneralPreferenceFragment"
+        android:fragment="esnetlab.apps.android.wifidirect.efficientmultigroups.SettingsActivity$ProtocolTimingPreferenceFragment"
         android:icon="@drawable/ic_prtocol_timing_black_24dp"
         android:title="@string/pref_header_protocol_timing" />
 
@@ -16,5 +16,10 @@
         android:fragment="esnetlab.apps.android.wifidirect.efficientmultigroups.SettingsActivity$PortsPreferenceFragment"
         android:icon="@drawable/ic_ports_black_24dp"
         android:title="@string/pref_header_ports" />
+
+    <header
+        android:fragment="esnetlab.apps.android.wifidirect.efficientmultigroups.SettingsActivity$TestingParametersPreferenceFragment"
+        android:icon="@drawable/ic_testing_parameters_black_24dp"
+        android:title="@string/pref_header_testing_parameters" />
 
 </preference-headers>
