@@ -103,7 +103,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     private final PerformanceAnalysis performanceAnalysis = new PerformanceAnalysis();
 
     public ThisDeviceState thisDeviceState = ThisDeviceState.STARTED;
-    public PerformanceAnalysis.ProtocolTestMode protocolTestMode = PerformanceAnalysis.ProtocolTestMode.NO_TEST;
+    public ProtocolTestMode protocolTestMode = ProtocolTestMode.NO_TEST;
 
     public int myProposedIP = DiscoveryPeerInfo.generateProposedIP();
 
@@ -184,7 +184,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     private final Runnable tearDownRunnable = new Runnable() {
         @Override
         public void run() {
-            if (mRequestedNoOfRuns == -1) {
+            if ((mRequestedNoOfRuns == -1) || (mRequestedNoOfRuns > performanceAnalysis.runNumber)) {
                 tearDownGroupAndReRun();
                 performanceAnalysis.runNumber++;
             } else if (mRequestedNoOfRuns == performanceAnalysis.runNumber) {
@@ -374,6 +374,9 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                     case R.id.action_group_formation_test:
                         startGroupFormationTest();
                         break;
+                    case R.id.action_proxy_selection_test:
+                        startProxySelectionTest();
+                        break;
                     case R.id.action_emc_full:
                         startEmcFullTest();
                         break;
@@ -442,21 +445,28 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     private void startEmcFullTest() {
         performanceAnalysis.reset();
         appendLogUiThread("[*] Starting EMC Full Test .................\n");
-        protocolTestMode = PerformanceAnalysis.ProtocolTestMode.FULL_EMC_TEST;
+        protocolTestMode = ProtocolTestMode.FULL_EMC_TEST;
+        tearDownGroupAndReRun();
+    }
+
+    private void startProxySelectionTest() {
+        performanceAnalysis.reset();
+        appendLogUiThread("[*] Starting Proxy Selection Test .................\n");
+        protocolTestMode = ProtocolTestMode.PROXY_SELECTION_TEST;
         tearDownGroupAndReRun();
     }
 
     private void startGroupFormationTest() {
         performanceAnalysis.reset();
         appendLogUiThread("[*] Starting Group Formation Test .................\n");
-        protocolTestMode = PerformanceAnalysis.ProtocolTestMode.GROUP_FORMATION_TEST;
+        protocolTestMode = ProtocolTestMode.GROUP_FORMATION_TEST;
         tearDownGroupAndReRun();
     }
 
     private void startIpConflictTest() {
         performanceAnalysis.reset();
         appendLogUiThread("[*] Starting IP Conflict Test .................\n");
-        protocolTestMode = PerformanceAnalysis.ProtocolTestMode.IP_CONFLICT_TEST;
+        protocolTestMode = ProtocolTestMode.IP_CONFLICT_TEST;
         tearDownGroupAndReRun();
     }
 
@@ -465,7 +475,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         clearLog();
         saveStatistics();
         displayStatistics();
-        protocolTestMode = PerformanceAnalysis.ProtocolTestMode.NO_TEST;
+        protocolTestMode = ProtocolTestMode.NO_TEST;
         tearDownGroupAndReRun(false);
     }
 
@@ -655,10 +665,12 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             }*/
 
             appendLog("Connected as group owner -> Opening Management Sockets");
-            if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.FULL_EMC_TEST) {
+            if (protocolTestMode == ProtocolTestMode.FULL_EMC_TEST
+                    || protocolTestMode == ProtocolTestMode.PROXY_SELECTION_TEST) {
                 //Start a socket connection handler for group management operations
                 if (!connectManagementAsServer()) return;
-
+            }
+            if (protocolTestMode == ProtocolTestMode.FULL_EMC_TEST) {
                 //TODO Open Proxy sockets for data and management
                 if (!connectProxyManagementAsServer()) return;
                 if (!connectProxyDataAsServer()) return;
@@ -680,14 +692,15 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             }
 
             appendLog("Connected as peer -> Connecting to Management Socket");
-            if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.FULL_EMC_TEST) {
+            if (protocolTestMode == ProtocolTestMode.FULL_EMC_TEST
+                    || protocolTestMode == ProtocolTestMode.PROXY_SELECTION_TEST) {
                 if (!connectManagementAsClient(groupOwnerAddress)) return;
             }
             sendNearbyLegacyApsInfoHandler.postDelayed(sendNearbyLegacyApsInfoRunnable,
                     mSendNearbyLegacyApsInfoPeriod);
 
         }
-        if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.FULL_EMC_TEST) {
+        if (protocolTestMode == ProtocolTestMode.FULL_EMC_TEST) {
             if (info.groupFormed) {
                 //Start a socket connection handler for Data exchange. This is done for both GO and non GO.
                 if (!connectDataAsServer()) return;
@@ -1447,8 +1460,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         if (rankStr.contains("YES")) {
             appendLogUiThread("I AM THE BEST, TRYING TO CREATE A GROUP");
             performanceAnalysis.beGoCount++;
-            if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.IP_CONFLICT_TEST) {
-                if (mRequestedNoOfRuns == -1) {
+            if (protocolTestMode == ProtocolTestMode.IP_CONFLICT_TEST) {
+                if ((mRequestedNoOfRuns == -1) || (mRequestedNoOfRuns > performanceAnalysis.runNumber)) {
                     //As we are just testing the conflict in IPs, we do not have to proceed
                     //in the next EMC steps.
                     performanceAnalysis.runNumber++;
@@ -1456,14 +1469,15 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                 } else if (mRequestedNoOfRuns == performanceAnalysis.runNumber) {
                     stopAllTests();
                 }
-            } else if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.FULL_EMC_TEST
-                    || protocolTestMode == PerformanceAnalysis.ProtocolTestMode.GROUP_FORMATION_TEST) {
+            } else if (protocolTestMode == ProtocolTestMode.FULL_EMC_TEST
+                    || protocolTestMode == ProtocolTestMode.GROUP_FORMATION_TEST
+                    || protocolTestMode == ProtocolTestMode.PROXY_SELECTION_TEST) {
                 createWifiP2pGroup();
             }
         } else {
             appendLogUiThread("AT LEAST SOMEONE ELSE IS BETTER THAN ME, TRYING TO CHOOSE GROUP");
-            if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.IP_CONFLICT_TEST) {
-                if (mRequestedNoOfRuns == -1) {
+            if (protocolTestMode == ProtocolTestMode.IP_CONFLICT_TEST) {
+                if ((mRequestedNoOfRuns == -1) || (mRequestedNoOfRuns > performanceAnalysis.runNumber)) {
                     //As we are just testing the conflict in IPs, we do not have to proceed
                     //in the next EMC steps.
                     performanceAnalysis.runNumber++;
@@ -1475,8 +1489,9 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                 } else if (mRequestedNoOfRuns == performanceAnalysis.runNumber) {
                     stopAllTests();
                 }
-            } else if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.FULL_EMC_TEST
-                    || protocolTestMode == PerformanceAnalysis.ProtocolTestMode.GROUP_FORMATION_TEST) {
+            } else if (protocolTestMode == ProtocolTestMode.FULL_EMC_TEST
+                    || protocolTestMode == ProtocolTestMode.GROUP_FORMATION_TEST
+                    || protocolTestMode == ProtocolTestMode.PROXY_SELECTION_TEST) {
                 declareGM();
             }
         }
@@ -1503,7 +1518,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
     private void decideProxiesAndInformMembers() {
         if (legacyGroupsInfo.getLegacyApsList().size() > 0) {
-            legacyGroupsInfo.calculateCoverage();
+            String str = legacyGroupsInfo.calculateCoverage();
+            appendLogUiThread("PROXY ASSIGNMENTS ARE AS FOLLOWS:\n\n" + str);
 
             for (LegacyApsCoverage legacyApsCoverage : legacyGroupsInfo.legacyApsCoverages) {
                 if (legacyApsCoverage.sendAssignmentForProxyPeer())
@@ -1523,7 +1539,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             if (p2pInfo != null) {
                 if (!p2pInfo.isGroupOwner) {
                     if (thisDeviceState == ThisDeviceState.GM_COMMUNICATING_WITH_GO) {
-                        if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.FULL_EMC_TEST) {
+                        if (protocolTestMode == ProtocolTestMode.FULL_EMC_TEST
+                                || protocolTestMode == ProtocolTestMode.PROXY_SELECTION_TEST) {
                             final int size = groupSocketPeers.getOpenManagementSockets().size();
                             if (size == 0) {
                                 appendLogUiThread("Not connected to GO Management Socket!!!");
@@ -1535,7 +1552,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                             } else if (size > 1) {
                                 appendLogUiThread("Error!!! can't have more than one management socket");
                             }
-                        } else if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.GROUP_FORMATION_TEST) {
+                        } else if (protocolTestMode == ProtocolTestMode.GROUP_FORMATION_TEST) {
                             appendLogUiThread("sendNearbyLegacyApsInfo: sent To GO -> "
                                     + discoveryPeersInfo.toStringGoOnly());
                         }
@@ -1616,7 +1633,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         proxyMgntHandler = null;
         proxyDataHandler = null;
 
-        if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.NO_TEST) {
+        if (protocolTestMode == ProtocolTestMode.NO_TEST) {
             performanceAnalysis.reset();
         }
 
@@ -1634,7 +1651,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
     public synchronized void startTimers() {
         try {
-            if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.FULL_EMC_TEST) {
+            if (protocolTestMode == ProtocolTestMode.FULL_EMC_TEST) {
                 sendMyInfoTimer = new Timer("sendMyInfoTimer");
                 sendPeersInfoTimer = new Timer("sendPeersInfoTimer");
                 sendMyInfoTimer.schedule(new SendMyInfoTask(), 0, mSendMyInfPeriod);
@@ -1969,6 +1986,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         if (p2pInfo != null) {
             if (isWifiP2pEnabled) {
                 groupSocketPeers.prunePeers();
+
                 if (p2pInfo.isGroupOwner) {
                     if (thisDeviceState == ThisDeviceState.GO_ACCEPTING_CONNECTIONS) {
                         String pLst = groupSocketPeers.toString();

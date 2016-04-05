@@ -7,6 +7,14 @@ import java.util.Locale;
 /**
  * Created by Ahmed on 3/28/2016.
  */
+enum ProtocolTestMode {
+    NO_TEST,
+    IP_CONFLICT_TEST,
+    GROUP_FORMATION_TEST,
+    PROXY_SELECTION_TEST,
+    FULL_EMC_TEST
+}
+
 public class PerformanceAnalysis {
     public final ArrayList<DiscoveryPeerStatistics> discoveryPeerStatisticsList = new ArrayList<>();
     public final ArrayList<SocketPeerStatistics> socketPeerStatisticsList = new ArrayList<>();
@@ -172,12 +180,7 @@ public class PerformanceAnalysis {
         socketPeerStatisticsList.clear();
     }
 
-    public enum ProtocolTestMode {
-        FULL_EMC_TEST,
-        IP_CONFLICT_TEST,
-        NO_TEST,
-        GROUP_FORMATION_TEST
-    }
+
 }
 
 class DiscoveryPeerStatistics {

@@ -26,6 +26,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom"
                 android:layout_weight="0.95"
+                android:focusable="true"
                 android:focusableInTouchMode="true"
                 android:inputType="textAutoComplete"
                 android:visibility="visible" />

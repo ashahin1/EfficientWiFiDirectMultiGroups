@@ -2,6 +2,7 @@ package esnetlab.apps.android.wifidirect.efficientmultigroups;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Created by Ahmed on 4/9/2015.
@@ -34,7 +35,10 @@ public class LegacyGroupsInfo {
         return null;
     }
 
-    public void calculateCoverage() {
+    public String calculateCoverage() {
+        String str = String.format(Locale.US, "%20s%20s\n", "SSID", "Assigned PM");
+        str += String.format(Locale.US, "%40s\n", " ").replace(" ", "-");
+
         //Transform the peerNearbyLegacies list into legacyApsCoverages list
 
         //Get a list of all legacyAps
@@ -45,10 +49,19 @@ public class LegacyGroupsInfo {
 
         //Find for each LegacyAp the selected peer and the spare peer
         for (LegacyApsCoverage legacyApsCoverage : legacyApsCoverages) {
-            if (legacyApsCoverage.socketPeers.size() > 0)
+            if (legacyApsCoverage.socketPeers.size() > 0) {
                 legacyApsCoverage.proxyPeer =
                         getSocketPeerNearbyLegacy(legacyApsCoverage.socketPeers.get(0));
+                if (legacyApsCoverage.socketPeers != null) {
+                    str += String.format(Locale.US
+                            , "%20s%20s\n"
+                            , legacyApsCoverage.legacyAp
+                            , legacyApsCoverage.proxyPeer.socketPeer.toString());
+                }
+            }
         }
+
+        return str;
     }
 
     public void buildLegacyApCoverage(List<String> legacyAps) {

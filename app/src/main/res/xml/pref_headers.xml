@@ -4,7 +4,7 @@
 
     <header
         android:fragment="esnetlab.apps.android.wifidirect.efficientmultigroups.SettingsActivity$ProtocolTimingPreferenceFragment"
-        android:icon="@drawable/ic_prtocol_timing_black_24dp"
+        android:icon="@drawable/ic_protocol_timing_black_24dp"
         android:title="@string/pref_header_protocol_timing" />
 
     <header

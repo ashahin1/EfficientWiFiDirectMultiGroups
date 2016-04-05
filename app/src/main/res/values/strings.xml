@@ -83,5 +83,6 @@
     <!-- Setting for Testing Parameters -->
     <string name="pref_header_testing_parameters">Testing Parameters</string>
     <string name="pref_title_requested_no_of_runs">Requested No. Of Runs</string>
+    <string name="action_proxy_selection_test">Proxy Selection Test</string>
     <integer name="pref_default_requested_no_of_runs">-1</integer>
 </resources>

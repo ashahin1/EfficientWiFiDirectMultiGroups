@@ -31,14 +31,19 @@
         android:orderInCategory="6"
         android:title="@string/action_group_formation_test" />
     <item
+        android:id="@+id/action_proxy_selection_test"
+        android:icon="@drawable/ic_action_proxy_selection_test"
+        android:orderInCategory="7"
+        android:title="@string/action_proxy_selection_test" />
+    <item
         android:id="@+id/action_emc_full"
         android:icon="@drawable/ic_action_emc_full"
-        android:orderInCategory="7"
+        android:orderInCategory="8"
         android:title="@string/action_emc_full" />
     <item
         android:id="@+id/action_stop_tests"
         android:icon="@drawable/ic_action_stop_tests"
-        android:orderInCategory="8"
+        android:orderInCategory="9"
         android:title="@string/action_stop_tests" />
     <item
         android:id="@+id/action_continuous_data"
