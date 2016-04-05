@@ -1456,7 +1456,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                 } else if (mRequestedNoOfRuns == performanceAnalysis.runNumber) {
                     stopAllTests();
                 }
-            } else if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.FULL_EMC_TEST) {
+            } else if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.FULL_EMC_TEST
+                    || protocolTestMode == PerformanceAnalysis.ProtocolTestMode.GROUP_FORMATION_TEST) {
                 createWifiP2pGroup();
             }
         } else {
@@ -1474,7 +1475,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                 } else if (mRequestedNoOfRuns == performanceAnalysis.runNumber) {
                     stopAllTests();
                 }
-            } else if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.FULL_EMC_TEST) {
+            } else if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.FULL_EMC_TEST
+                    || protocolTestMode == PerformanceAnalysis.ProtocolTestMode.GROUP_FORMATION_TEST) {
                 declareGM();
             }
         }
