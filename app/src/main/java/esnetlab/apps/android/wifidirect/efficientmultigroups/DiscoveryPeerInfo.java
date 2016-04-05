@@ -66,6 +66,7 @@ public class DiscoveryPeerInfo {
                             break;
                         case PROPOSED_IP:
                             discoveryPeerInfo.proposedIP = Integer.valueOf(tmp);
+                            break;
                         case LEGACY_SSID:
                             discoveryPeerInfo.legacySSID = tmp;
                             break;
@@ -74,6 +75,8 @@ public class DiscoveryPeerInfo {
                             break;
                         case NUM_OF_MEMBERS:
                             discoveryPeerInfo.numOfMembers = Integer.valueOf(tmp);
+                            break;
+                        default:
                             break;
                     }
                 }

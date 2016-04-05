@@ -216,8 +216,8 @@ class SocketPeerStatistics {
 }
 
 class MessageCounter {
-    final HashMap<Integer, Integer> lengthCounter = new HashMap<>();
-    long startTime = 0;
+    private final HashMap<Integer, Integer> lengthCounter = new HashMap<>();
+    private long startTime = 0;
 
     public void addLength(int length) {
         if (lengthCounter.size() == 0)

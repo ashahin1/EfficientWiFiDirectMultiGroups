@@ -398,10 +398,6 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         });
     }
 
-    private void startGroupFormationTest() {
-
-    }
-
     private void createMenu(int menuRes, View anchor, MenuBuilder.Callback callback) {
         //http://stackoverflow.com/questions/6805756/is-it-possible-to-display-icons-in-a-popupmenu
         Context context = anchor.getContext();
@@ -444,14 +440,21 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
 
     private void startEmcFullTest() {
-        performanceAnalysis.runNumber = 1;
+        performanceAnalysis.reset();
         appendLogUiThread("[*] Starting EMC Full Test .................\n");
         protocolTestMode = PerformanceAnalysis.ProtocolTestMode.FULL_EMC_TEST;
         tearDownGroupAndReRun();
     }
 
+    private void startGroupFormationTest() {
+        performanceAnalysis.reset();
+        appendLogUiThread("[*] Starting Group Formation Test .................\n");
+        protocolTestMode = PerformanceAnalysis.ProtocolTestMode.GROUP_FORMATION_TEST;
+        tearDownGroupAndReRun();
+    }
+
     private void startIpConflictTest() {
-        performanceAnalysis.runNumber = 1;
+        performanceAnalysis.reset();
         appendLogUiThread("[*] Starting IP Conflict Test .................\n");
         protocolTestMode = PerformanceAnalysis.ProtocolTestMode.IP_CONFLICT_TEST;
         tearDownGroupAndReRun();
@@ -467,7 +470,9 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     }
 
     private void displayStatistics() {
-        txtLog.setText(performanceAnalysis.getStatistics(p2pDevice != null ? p2pDevice.deviceAddress : ""));
+        String str = getHeaderString();
+        str += performanceAnalysis.getStatistics(p2pDevice != null ? p2pDevice.deviceAddress : "");
+        txtLog.setText(str);
     }
 
     private void saveStatistics() {
@@ -650,13 +655,14 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             }*/
 
             appendLog("Connected as group owner -> Opening Management Sockets");
+            if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.FULL_EMC_TEST) {
+                //Start a socket connection handler for group management operations
+                if (!connectManagementAsServer()) return;
 
-            //Start a socket connection handler for group management operations
-            if (!connectManagementAsServer()) return;
-
-            //TODO Open Proxy sockets for data and management
-            if (!connectProxyManagementAsServer()) return;
-            if (!connectProxyDataAsServer()) return;
+                //TODO Open Proxy sockets for data and management
+                if (!connectProxyManagementAsServer()) return;
+                if (!connectProxyDataAsServer()) return;
+            }
 
         } else if (info.groupFormed) {
             /*
@@ -674,15 +680,18 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             }
 
             appendLog("Connected as peer -> Connecting to Management Socket");
-            if (!connectManagementAsClient(groupOwnerAddress)) return;
-
+            if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.FULL_EMC_TEST) {
+                if (!connectManagementAsClient(groupOwnerAddress)) return;
+            }
             sendNearbyLegacyApsInfoHandler.postDelayed(sendNearbyLegacyApsInfoRunnable,
                     mSendNearbyLegacyApsInfoPeriod);
-        }
 
-        if (info.groupFormed) {
-            //Start a socket connection handler for Data exchange. This is done for both GO and non GO.
-            if (!connectDataAsServer()) return;
+        }
+        if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.FULL_EMC_TEST) {
+            if (info.groupFormed) {
+                //Start a socket connection handler for Data exchange. This is done for both GO and non GO.
+                if (!connectDataAsServer()) return;
+            }
         }
     }
 
@@ -1512,16 +1521,21 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             if (p2pInfo != null) {
                 if (!p2pInfo.isGroupOwner) {
                     if (thisDeviceState == ThisDeviceState.GM_COMMUNICATING_WITH_GO) {
-                        final int size = groupSocketPeers.getOpenManagementSockets().size();
-                        if (size == 0) {
-                            appendLogUiThread("Not connected to GO Management Socket!!!");
-                        } else if (size == 1) {
-                            String info = discoveryPeersInfo.toStringGoOnly();
-                            groupSocketPeers.sendToAllManagmentSockets(
-                                    info, MessageType.MGMNT_GM_TO_GO_FOUND_LEGACY_AP);
-                            appendLogUiThread("sendNearbyLegacyApsInfo: sent To GO -> " + info);
-                        } else if (size > 1) {
-                            appendLogUiThread("Error!!! can't have more than one management socket");
+                        if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.FULL_EMC_TEST) {
+                            final int size = groupSocketPeers.getOpenManagementSockets().size();
+                            if (size == 0) {
+                                appendLogUiThread("Not connected to GO Management Socket!!!");
+                            } else if (size == 1) {
+                                String info = discoveryPeersInfo.toStringGoOnly();
+                                groupSocketPeers.sendToAllManagmentSockets(
+                                        info, MessageType.MGMNT_GM_TO_GO_FOUND_LEGACY_AP);
+                                appendLogUiThread("sendNearbyLegacyApsInfo: sent To GO -> " + info);
+                            } else if (size > 1) {
+                                appendLogUiThread("Error!!! can't have more than one management socket");
+                            }
+                        } else if (protocolTestMode == PerformanceAnalysis.ProtocolTestMode.GROUP_FORMATION_TEST) {
+                            appendLogUiThread("sendNearbyLegacyApsInfo: sent To GO -> "
+                                    + discoveryPeersInfo.toStringGoOnly());
                         }
                     }
                 }

@@ -12,7 +12,7 @@ import java.util.Random;
 public class SocketPeers {
 
     public static final String TAG = "SocketPeers";
-    List<SocketPeer> socketPeerList;
+    private List<SocketPeer> socketPeerList;
 
     public SocketPeers() {
         socketPeerList = new ArrayList<SocketPeer>();
