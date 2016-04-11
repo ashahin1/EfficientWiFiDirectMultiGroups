@@ -17,17 +17,19 @@ public class BatteryInformation {
 
     public BatteryInformation getBatteryStats(Context context) {
         if (context != null) {
-            IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
-            Intent batteryStatus = context.registerReceiver(null, ifilter);
+            IntentFilter iFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+            Intent batteryStatus = context.registerReceiver(null, iFilter);
 
-            int status = batteryStatus.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
-            isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
-                    status == BatteryManager.BATTERY_STATUS_FULL;
-            level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-            scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-            percent = level / (float) scale;
-            capacity = getBatteryCapacity(context).intValue();
-            return this;
+            if (batteryStatus != null) {
+                int status = batteryStatus.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
+                isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                        status == BatteryManager.BATTERY_STATUS_FULL;
+                level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+                scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+                percent = level / (float) scale;
+                capacity = getBatteryCapacity(context).intValue();
+                return this;
+            }
         }
         return null;
     }

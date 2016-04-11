@@ -18,6 +18,7 @@
     <string name="action_stop_tests">Stop Tests</string>
     <string name="btn_send">Send</string>
     <string name="action_save_log">Save Log to File</string>
+    <string name="action_proxy_selection_test">Proxy Selection Test</string>
     <string name="title_activity_settings">Settings</string>
 
     <!-- Strings related to Settings -->
@@ -83,6 +84,7 @@
     <!-- Setting for Testing Parameters -->
     <string name="pref_header_testing_parameters">Testing Parameters</string>
     <string name="pref_title_requested_no_of_runs">Requested No. Of Runs</string>
-    <string name="action_proxy_selection_test">Proxy Selection Test</string>
     <integer name="pref_default_requested_no_of_runs">-1</integer>
+    <string name="pref_title_add_service_on_change">Add Device Service on Change Only</string>
+    <bool name="pref_default_add_service_on_change">false</bool>
 </resources>

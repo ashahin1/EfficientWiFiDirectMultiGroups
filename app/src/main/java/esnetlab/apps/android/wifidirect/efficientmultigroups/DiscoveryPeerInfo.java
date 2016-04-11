@@ -24,22 +24,22 @@ public class DiscoveryPeerInfo {
     public boolean batteryIsCharging;
     public String legacySSID;
     public String legacyKey;
-    public int proposedIP; //The third octet of the IP
+    public String proposedIP; //The third octet of the IP
     public int numOfMembers;
 
     DiscoveryPeerInfo() {
-        updatePeerInfo("", -1, -1, false, -1, "", "", 0);
+        updatePeerInfo("", -1, -1, false, "", "", "", 0);
     }
 
     DiscoveryPeerInfo(String deviceId) {
-        updatePeerInfo(deviceId, -1, -1, false, -1, "", "", 0);
+        updatePeerInfo(deviceId, -1, -1, false, "", "", "", 0);
     }
 
-    DiscoveryPeerInfo(String deviceId, int batteryLevel, int batteryCapacity, boolean batteryIsCharging, int proposedIP) {
+    DiscoveryPeerInfo(String deviceId, int batteryLevel, int batteryCapacity, boolean batteryIsCharging, String proposedIP) {
         updatePeerInfo(deviceId, batteryLevel, batteryCapacity, batteryIsCharging, proposedIP, "", "", 0);
     }
 
-    DiscoveryPeerInfo(String deviceId, int batteryLevel, int batteryCapacity, boolean batteryIsCharging, int proposedIP, String legacySSID, String legacyKey, int numOfMembers) {
+    DiscoveryPeerInfo(String deviceId, int batteryLevel, int batteryCapacity, boolean batteryIsCharging, String proposedIP, String legacySSID, String legacyKey, int numOfMembers) {
         updatePeerInfo(deviceId, batteryLevel, batteryCapacity, batteryIsCharging, proposedIP, legacySSID, legacyKey, numOfMembers);
     }
 
@@ -65,7 +65,7 @@ public class DiscoveryPeerInfo {
                             discoveryPeerInfo.batteryIsCharging = Boolean.valueOf(tmp);
                             break;
                         case PROPOSED_IP:
-                            discoveryPeerInfo.proposedIP = Integer.valueOf(tmp);
+                            discoveryPeerInfo.proposedIP = tmp;
                             break;
                         case LEGACY_SSID:
                             discoveryPeerInfo.legacySSID = tmp;
@@ -85,22 +85,12 @@ public class DiscoveryPeerInfo {
         return discoveryPeerInfo;
     }
 
-    static public int generateProposedIP() {
-        int pIP = -1;
-
-        //Generate a random integer and shift it by 49, which is the starting IP range for Wi-Fi Direct
-        //The upper limit for the generated ip octet is 254, and the lower limit is 49
-        pIP = new Random().nextInt(205) + 49;
-
-        return pIP;
-    }
-
-    private void updatePeerInfo(String deviceId, int batteryLevel, int batteryCapacity, boolean batteryIsCharging, int proposedIP, String legacySSID, String legacyKey, int numOfMembers) {
+    public void updatePeerInfo(String deviceId, int batteryLevel, int batteryCapacity, boolean batteryIsCharging, String proposedIP, String legacySSID, String legacyKey, int numOfMembers) {
         this.deviceId = deviceId;
         this.batteryCapacity = batteryCapacity;
         this.batteryLevel = batteryLevel;
         this.batteryIsCharging = batteryIsCharging;
-        this.proposedIP = proposedIP;// == -1 ? generateProposedIP() : proposedIP;
+        this.proposedIP = proposedIP;
         this.legacySSID = legacySSID;
         this.legacyKey = legacyKey;
         this.numOfMembers = numOfMembers;
@@ -116,6 +106,19 @@ public class DiscoveryPeerInfo {
                 , discoveryPeerInfo.legacySSID
                 , discoveryPeerInfo.legacyKey
                 , discoveryPeerInfo.numOfMembers);
+    }
+
+    public boolean deviceInfoAreEqual(int batteryLevel, int batteryCapacity, boolean batteryIsCharging, String proposedIP) {
+        return ((this.batteryLevel == batteryLevel)
+                && (this.batteryCapacity == batteryCapacity)
+                && (this.batteryIsCharging == batteryIsCharging)
+                && (this.proposedIP.equals(proposedIP)));
+    }
+
+    public boolean legacyApInfoAreEqual(String legacySSID, String legacyKey, int numOfMembers) {
+        return ((this.legacySSID.equals(legacySSID))
+                && (this.legacyKey.equals(legacyKey))
+                && (this.numOfMembers == numOfMembers));
     }
 
     public Boolean getIsGO() {
@@ -142,7 +145,7 @@ public class DiscoveryPeerInfo {
     @Override
     public String toString() {
         String str;
-        str = String.format(Locale.US, "%s-> %s, %s-> %d, %s-> %d, %s-> %s, %s-> %d, %s-> %s, %s-> %s, %s-> %d",
+        str = String.format(Locale.US, "%s-> %s, %s-> %d, %s-> %d, %s-> %s, %s-> %s, %s-> %s, %s-> %s, %s-> %d",
                 DEVICE_ID, deviceId, BATTERY_LEVEL, batteryLevel, BATTERY_CAPACITY, batteryCapacity,
                 BATTERY_IS_CHARGING, Boolean.toString(batteryIsCharging), PROPOSED_IP, proposedIP,
                 LEGACY_SSID, legacySSID, LEGACY_KEY, legacyKey, NUM_OF_MEMBERS, numOfMembers);

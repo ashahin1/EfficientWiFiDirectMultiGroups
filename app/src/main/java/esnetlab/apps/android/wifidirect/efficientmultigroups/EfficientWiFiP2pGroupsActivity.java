@@ -87,6 +87,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
     //Testing parameters
     public static int mRequestedNoOfRuns;
+    public static boolean mAddServiceOnChange;
 
     public static WifiP2pInfo p2pInfo = null;
     public static WifiP2pGroup p2pGroup = null;
@@ -101,25 +102,24 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     private final LegacyGroupsInfo legacyGroupsInfo = new LegacyGroupsInfo();
     private final HashMap<String, Map<String, String>> buddies = new HashMap<>();
     private final PerformanceAnalysis performanceAnalysis = new PerformanceAnalysis();
+    private final DiscoveryPeerInfo myDiscoveryInfo = new DiscoveryPeerInfo();
 
     public ThisDeviceState thisDeviceState = ThisDeviceState.STARTED;
     public ProtocolTestMode protocolTestMode = ProtocolTestMode.NO_TEST;
 
-    public int myProposedIP = DiscoveryPeerInfo.generateProposedIP();
+    public String myProposedIP = Utilities.generateProposedIP();
 
     private TextView txtLog;
     private EditText txtSend;
     private TextView txtReceived;
 
     private boolean streamingStarted = false;
-    private boolean requestRun = false;
 
     private Thread mgntHandler = null;
     private Thread dataHandler = null;
     private Thread proxyMgntHandler = null;
     private Thread proxyDataHandler = null;
 
-    private BatteryInformation batteryInfo = new BatteryInformation();
     private WifiManager wifiManager;
     private WifiBroadcastReceiver wifiBroadcastReceiver;
     private WifiP2pManager wifiP2pManager;
@@ -267,6 +267,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
             pInt = getResources().getInteger(R.integer.pref_default_requested_no_of_runs);
             mRequestedNoOfRuns = Integer.parseInt(sharedPreferences.getString(PREF_REQUESTED_NO_OF_RUNS, String.valueOf(pInt)));
+            boolean pBool = getResources().getBoolean(R.bool.pref_default_add_service_on_change);
+            mAddServiceOnChange = sharedPreferences.getBoolean(PREF_ADD_SERVICE_ON_CHANGE, pBool);
         }
     }
 
@@ -361,6 +363,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                     case R.id.action_create_service:
                         removeDeviceInfoService();
                         sleep(1000);
+                        updateMyDeviceDiscoveryInfo();
                         createDeviceInfoService();
                         break;
                     case R.id.action_list_services:
@@ -563,7 +566,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         wifiP2pBroadcastReceiver = new WiFiP2pBroadcastReceiver(wifiP2pManager, wifiP2pChannel, this);
         registerReceiver(wifiP2pBroadcastReceiver, wifiP2pIntentFilter);
 
-        requestRun = true;
+        //requestRun = true;
 
         stopTimers();
         startTimers();
@@ -576,7 +579,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         unregisterReceiver(wifiBroadcastReceiver);
         unregisterReceiver(wifiP2pBroadcastReceiver);
 
-        requestRun = false;
+        //requestRun = false;
 
         stopTimers();
     }
@@ -586,7 +589,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         super.onDestroy();
         tearDownGroupAndReRun(false);
 
-        requestRun = false;
+        //requestRun = false;
     }
 
     @Override
@@ -799,6 +802,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                     appendLog("LegacySSID -> " + legacySSID);
                     appendLog("LegacyPassPhrase -> " + legacyPassPhrase);
 
+                    updateMyLegacyApDiscoveryInfo();
                     createLegacyApService();
                 }
             }
@@ -951,23 +955,69 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         }
     }
 
+    private synchronized boolean updateMyDeviceDiscoveryInfo() {
+        BatteryInformation bInfo = new BatteryInformation();
+        bInfo = bInfo.getBatteryStats(getApplicationContext());
+
+        boolean result = !myDiscoveryInfo.deviceInfoAreEqual(bInfo.level
+                , bInfo.capacity
+                , bInfo.isCharging
+                , myProposedIP);
+
+        if (result)
+            myDiscoveryInfo.updatePeerInfo(myDiscoveryInfo.deviceId
+                    , bInfo.level
+                    , bInfo.capacity
+                    , bInfo.isCharging
+                    , myProposedIP
+                    , myDiscoveryInfo.legacySSID
+                    , myDiscoveryInfo.legacyKey
+                    , myDiscoveryInfo.numOfMembers);
+
+        return result;
+    }
+
+    private boolean isReSendingDeviceInfoRequired() {
+        boolean updated = updateMyDeviceDiscoveryInfo();
+        return ((!mAddServiceOnChange) || (updated));
+    }
+
+    private boolean updateMyLegacyApDiscoveryInfo() {
+        boolean result = false;
+        if (p2pGroup != null) {
+            result = !myDiscoveryInfo.legacyApInfoAreEqual(p2pGroup.getNetworkName()
+                    , p2pGroup.getPassphrase(), p2pGroup.getClientList().size());
+
+            if (result) {
+                myDiscoveryInfo.legacySSID = p2pGroup.getNetworkName();
+                myDiscoveryInfo.legacyKey = p2pGroup.getPassphrase();
+                myDiscoveryInfo.numOfMembers = p2pGroup.getClientList().size();
+            }
+        }
+        return result;
+    }
+
+    private boolean isReSendingLegacyApInfoRequired() {
+        boolean updated = updateMyLegacyApDiscoveryInfo();
+        return ((!mAddServiceOnChange) || (updated));
+    }
+
     private synchronized void createDeviceInfoService() {
-        batteryInfo = batteryInfo.getBatteryStats(getApplicationContext());
         Map<String, String> record = new HashMap<>();
 
         //Declare the type as "0" which means a DeviceInfo service record
         record.put(RECORD_TYPE, RECORD_TYPE_DEVICE_INFO);
-        record.put(RECORD_LEVEL, Integer.toString(batteryInfo.level));
-        record.put(RECORD_CAPACITY, Integer.toString(batteryInfo.capacity));
-        record.put(RECORD_CHARGING, Boolean.toString(batteryInfo.isCharging));
-        record.put(RECORD_PROPOSED_IP, Integer.toString(myProposedIP));
+        record.put(RECORD_LEVEL, Integer.toString(myDiscoveryInfo.batteryLevel));
+        record.put(RECORD_CAPACITY, Integer.toString(myDiscoveryInfo.batteryCapacity));
+        record.put(RECORD_CHARGING, Boolean.toString(myDiscoveryInfo.batteryIsCharging));
+        record.put(RECORD_PROPOSED_IP, myProposedIP + discoveryPeersInfo.getConflictedPeerIPs());
 
         serviceDeviceInfo =
                 WifiP2pDnsSdServiceInfo.newInstance(SERVICE_INSTANCE, SERVICE_REG_TYPE, record);
         wifiP2pManager.addLocalService(wifiP2pChannel, serviceDeviceInfo, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-                appendLogUiThread("Service DeviceInfo added successfully", true);
+                appendLogUiThread("Service DeviceInfo added successfully");
             }
 
             @Override
@@ -997,15 +1047,11 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         if (p2pGroup != null) {
             Map<String, String> record = new HashMap<>();
 
-            String legacySSID = p2pGroup.getNetworkName();
-            String legacyPassPhrase = p2pGroup.getPassphrase();
-            int numOfMembers = p2pGroup.getClientList().size();
-
             //Declare the type as "1" which means a LegacyAP service record
             record.put(RECORD_TYPE, RECORD_TYPE_LEGACY_AP);
-            record.put(RECORD_SSID, legacySSID);
-            record.put(RECORD_KEY, legacyPassPhrase);
-            record.put(RECORD_NUMBER_OF_MEMBERS, String.valueOf(numOfMembers));
+            record.put(RECORD_SSID, myDiscoveryInfo.legacySSID);
+            record.put(RECORD_KEY, myDiscoveryInfo.legacyKey);
+            record.put(RECORD_NUMBER_OF_MEMBERS, String.valueOf(myDiscoveryInfo.numOfMembers));
 
             encryptDecryptRecordElement(record, true, RECORD_KEY);
 
@@ -1080,7 +1126,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
                                 //If I am in collecting device info phase I should check if my
                                 // proposed IP is conflicting with other devices or not.
-                                if (discoveryPeersInfo.isMyProposedIpConflicting(myProposedIP)) {
+                                if (discoveryPeersInfo.isMyProposedIpConflicting(myProposedIP
+                                        , discoveryPeersInfo.extractConflictedIpsFromPeer(getProposedIpRecordElement(rec)))) {
                                     performanceAnalysis.conflictIpCount++;
                                     appendLogUiThread("My Proposed IP [" + myProposedIP + "] is conflicting, trying a new one");
                                     myProposedIP = discoveryPeersInfo.getConflictFreeIP();
@@ -1106,6 +1153,12 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                             len += key.length() + rec.get(key).length();
                         }
                         return len;
+                    }
+
+                    private String getProposedIpRecordElement(Map<String, String> rec) {
+                        if (rec.containsKey(RECORD_PROPOSED_IP))
+                            return rec.get(RECORD_PROPOSED_IP);
+                        else return "";
                     }
                 };
 
@@ -1643,9 +1696,11 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             thisDeviceState = ThisDeviceState.COLLECTING_DEVICE_INFO;
 
             startTimers();
-            createDeviceInfoService();
-            myProposedIP = DiscoveryPeerInfo.generateProposedIP();
+
+            myProposedIP = Utilities.generateProposedIP();
             appendLogUiThread("My Proposed IP address is [" + myProposedIP + "]");
+            updateMyDeviceDiscoveryInfo();
+            createDeviceInfoService();
         }
     }
 
@@ -2042,18 +2097,36 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
     public void addServicesTask() {
         if (isWifiP2pEnabled) {
-            clearAllLocalServices();
-            sleep(500);
-            if (thisDeviceState == ThisDeviceState.COLLECTING_DEVICE_INFO
-                    || thisDeviceState == ThisDeviceState.GO_SENDING_LEGACY_INFO
-                    || thisDeviceState == ThisDeviceState.GO_ACCEPTING_CONNECTIONS) {
-                createDeviceInfoService();
-            }
+            Runnable r1 = new Runnable() {
+                @Override
+                public void run() {
+                    if (thisDeviceState == ThisDeviceState.COLLECTING_DEVICE_INFO
+                            || thisDeviceState == ThisDeviceState.GO_SENDING_LEGACY_INFO
+                            || thisDeviceState == ThisDeviceState.GO_ACCEPTING_CONNECTIONS) {
+                        if (isReSendingDeviceInfoRequired()) {
+                            removeDeviceInfoService();
+                            sleep(500);
+                            createDeviceInfoService();
+                        }
+                    }
+                }
+            };
+            r1.run();
 
-            if (thisDeviceState == ThisDeviceState.GO_SENDING_LEGACY_INFO
-                    || thisDeviceState == ThisDeviceState.GO_ACCEPTING_CONNECTIONS) {
-                createLegacyApService();
-            }
+            Runnable r2 = new Runnable() {
+                @Override
+                public void run() {
+                    if (thisDeviceState == ThisDeviceState.GO_SENDING_LEGACY_INFO
+                            || thisDeviceState == ThisDeviceState.GO_ACCEPTING_CONNECTIONS) {
+                        if (isReSendingLegacyApInfoRequired()) {
+                            removeLegacyApService();
+                            sleep(500);
+                            createLegacyApService();
+                        }
+                    }
+                }
+            };
+            r2.run();
         }
     }
 

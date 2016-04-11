@@ -14,8 +14,11 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.ByteOrder;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.List;
+import java.util.Random;
 import java.util.regex.Pattern;
 
 /**
@@ -28,6 +31,8 @@ public class Utilities {
             "^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
     private static final Pattern MAC_ADDR_PATTERN = Pattern.compile(
             "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$");
+
+    private static Random random = null;
 
 
     public static boolean isValidIPv4Addr(final String ip) {
@@ -62,6 +67,25 @@ public class Utilities {
         return null;
     }
 
+
+    public static byte[] getWifiMacAddressLeastByte() {
+        //adapted from http://robinhenniges.com/en/android6-get-mac-address-programmatically
+        byte[] macBytes = null;
+
+        try {
+            List<NetworkInterface> all = Collections.list(NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface nif : all) {
+                if (!nif.getName().equalsIgnoreCase("wlan0")) continue;
+
+                macBytes = nif.getHardwareAddress();
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return macBytes;
+    }
+
     //Adapted from http://stackoverflow.com/questions/16730711/get-my-wifi-ip-address-android
     public static String convertIntToIpAddress(int ipAddress) {
         // Convert little-endian to big-endianif needed
@@ -80,6 +104,35 @@ public class Utilities {
         }
 
         return ipAddressString;
+    }
+
+    static public String generateProposedIP() {
+        //Initialize the seed based on the least significant byte of the wifi mac address
+        if (random == null) {
+            byte[] macBytes = getWifiMacAddressLeastByte();
+            long seed = 0;
+
+            if (macBytes != null) {
+                for (int i = 0; i < macBytes.length - 2; i++) {
+                    seed += (macBytes[i] & 0xFF) + (seed << (i * 8));
+                }
+                random = new Random(seed);
+            } else {
+                random = new Random();
+            }
+        }
+
+        //Avoid 10.0.x.x and 10.1.x.x and 10.10.x.x
+        int ip2Octet = random.nextInt(254);
+        while ((ip2Octet == 0) || (ip2Octet == 1) || (ip2Octet == 10))
+            ip2Octet = random.nextInt(254);
+
+        //Avoid 10.x.0.x and 10.x.1.x
+        int ip3octet = random.nextInt(254);
+        while ((ip3octet == 0) || (ip3octet == 1))
+            ip3octet = random.nextInt(254);
+
+        return ip2Octet + "." + ip3octet;
     }
 
     //Taken from -> https://code.google.com/p/android-wifi-connecter/

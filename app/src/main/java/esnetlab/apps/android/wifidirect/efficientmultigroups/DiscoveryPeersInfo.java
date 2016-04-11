@@ -58,7 +58,7 @@ public class DiscoveryPeersInfo implements ProtocolConstants {
             peerInfo.batteryIsCharging = Boolean.valueOf(record.get(RECORD_CHARGING));
         }
         if (record.containsKey(RECORD_PROPOSED_IP)) {
-            peerInfo.proposedIP = Integer.valueOf(record.get(RECORD_PROPOSED_IP));
+            peerInfo.proposedIP = extractIpFromPeer(record.get(RECORD_PROPOSED_IP));
         }
         if (record.containsKey(RECORD_SSID)) {
             if (peerInfo.legacySSID.equals(record.get(RECORD_SSID)))
@@ -172,11 +172,11 @@ public class DiscoveryPeersInfo implements ProtocolConstants {
         selectedGoPeer = first;
         spareGoPeer = second;
         //Now based on the number of members on each group we decide which group to join
-        if (second != null ) {
+        if (second != null) {
             int num2 = second.numOfMembers;
             int num1 = first.numOfMembers;
 
-            if(num2 < num1){
+            if (num2 < num1) {
                 selectedGoPeer = second;
                 spareGoPeer = first;
             }
@@ -196,7 +196,7 @@ public class DiscoveryPeersInfo implements ProtocolConstants {
         BatteryInformation batteryInfo = new BatteryInformation();
         batteryInfo.getBatteryStats(context);
 
-        DiscoveryPeerInfo myInfo = new DiscoveryPeerInfo("", batteryInfo.level, batteryInfo.capacity, batteryInfo.isCharging, -1);
+        DiscoveryPeerInfo myInfo = new DiscoveryPeerInfo("", batteryInfo.level, batteryInfo.capacity, batteryInfo.isCharging, "");
 
         float bestRank = -1.0f;
         for (DiscoveryPeerInfo peerInfo : peersInfo) {
@@ -222,12 +222,23 @@ public class DiscoveryPeersInfo implements ProtocolConstants {
         return meIsBest ? "YES\n" + rankStr : rankStr;
     }
 
-    public boolean isMyProposedIpConflicting(int myProposedIP) {
+    public boolean isMyProposedIpConflicting(String proposedIp, String conflictedIpsString) {
         boolean conflict = false;
 
+        if (!conflictedIpsString.isEmpty()) {
+            //Try to check if my proposed IP is in the conflict list sent by any of the other neighbors
+            String[] ipStr = conflictedIpsString.split(",");
+            for (int i = 0; i < ipStr.length; i++) {
+                if (ipStr[i].equals(proposedIp)) {
+                    return true;
+                }
+            }
+        }
+
+        //Try to check if there is a direct conflict with neighbors
         for (DiscoveryPeerInfo pInfo : peersInfo) {
-            if (pInfo.proposedIP != -1) {
-                if (pInfo.proposedIP == myProposedIP) {
+            if (!"".equals(pInfo.proposedIP)) {
+                if (proposedIp.equals(pInfo.proposedIP)) {
                     conflict = true;
                     break;
                 }
@@ -237,11 +248,44 @@ public class DiscoveryPeersInfo implements ProtocolConstants {
         return conflict;
     }
 
-    public int getConflictFreeIP() {
-        int pIP = DiscoveryPeerInfo.generateProposedIP();
+    /**
+     * Iterates along all the stored discovery peers and return any conflicting IPs. These IPs
+     * should be reported to nearby peers to inform them to change their conflicting IPs.
+     *
+     * @return Comma concatenated string of the conflicted IPs
+     */
+    public String getConflictedPeerIPs() {
+        String cStr = "";
+        for (int i = 0; i < peersInfo.size() - 1; i++)
+            for (int j = i + 1; j < peersInfo.size(); j++) {
+                if (peersInfo.get(i).proposedIP.equals(peersInfo.get(j).proposedIP)) {
+                    cStr += "," + peersInfo.get(i).proposedIP;
+                }
+            }
+        return cStr;
+    }
 
-        while (isMyProposedIpConflicting(pIP)) {
-            pIP = DiscoveryPeerInfo.generateProposedIP();
+    public String extractConflictedIpsFromPeer(String receivedString) {
+        String result = "";
+
+        String[] str = receivedString.split(",");
+        if (str.length > 1) {
+            result = receivedString.substring(str[0].length() + 1);
+        }
+
+        return result;
+    }
+
+    public String extractIpFromPeer(String receivedString) {
+        String[] str = receivedString.split(",");
+        return str[0];
+    }
+
+    public String getConflictFreeIP() {
+        String pIP = Utilities.generateProposedIP();
+
+        while (isMyProposedIpConflicting(pIP, "")) {
+            pIP = Utilities.generateProposedIP();
         }
 
         return pIP;

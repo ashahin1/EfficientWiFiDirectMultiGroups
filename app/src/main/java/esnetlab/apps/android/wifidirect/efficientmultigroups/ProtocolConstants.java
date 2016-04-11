@@ -57,4 +57,5 @@ public interface ProtocolConstants {
 
     //Pref_Keys for testing parameters
     String PREF_REQUESTED_NO_OF_RUNS = "requested_no_of_runs_text";
+    String PREF_ADD_SERVICE_ON_CHANGE = "add_service_on_change_switch";
 }

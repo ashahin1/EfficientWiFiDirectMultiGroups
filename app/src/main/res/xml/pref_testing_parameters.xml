@@ -10,4 +10,9 @@
         android:selectAllOnFocus="true"
         android:singleLine="true"
         android:title="@string/pref_title_requested_no_of_runs" />
+
+    <SwitchPreference
+        android:defaultValue="@bool/pref_default_add_service_on_change"
+        android:key="add_service_on_change_switch"
+        android:title="@string/pref_title_add_service_on_change"/>
 </PreferenceScreen>
