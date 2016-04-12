@@ -88,6 +88,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     //Testing parameters
     public static int mRequestedNoOfRuns;
     public static boolean mAddServiceOnChange;
+    public static boolean mDiscoverServiceOnDemand;
+    public static int mNoOfDevices;
 
     public static WifiP2pInfo p2pInfo = null;
     public static WifiP2pGroup p2pGroup = null;
@@ -269,6 +271,11 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             mRequestedNoOfRuns = Integer.parseInt(sharedPreferences.getString(PREF_REQUESTED_NO_OF_RUNS, String.valueOf(pInt)));
             boolean pBool = getResources().getBoolean(R.bool.pref_default_add_service_on_change);
             mAddServiceOnChange = sharedPreferences.getBoolean(PREF_ADD_SERVICE_ON_CHANGE, pBool);
+            pBool = getResources().getBoolean(R.bool.pref_default_discover_service_on_demand);
+            mDiscoverServiceOnDemand = sharedPreferences.getBoolean(PREF_DISCOVER_SERVICES_ON_DEMAND, pBool);
+            pInt = getResources().getInteger(R.integer.pref_default_no_of_devices);
+            mNoOfDevices = Integer.parseInt(sharedPreferences.getString(PREF_NO_OF_DEVICES, String.valueOf(pInt)));
+
         }
     }
 
@@ -370,6 +377,10 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                         stopDiscoveringServices();
                         sleep(1000);
                         discoverServices();
+                        performanceAnalysis.reset();
+                        performanceAnalysis.startTime = System.currentTimeMillis();
+                        performanceAnalysis.noOfDevices = mNoOfDevices;
+                        performanceAnalysis.sentServiceDiscoveryRequestCount++;
                         break;
                     case R.id.action_ip_conflict_test:
                         startIpConflictTest();
@@ -1099,6 +1110,12 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                         buddies.put(srcDevice.deviceAddress, record);
                         appendLogUiThread("DnsSdTxtRecord available ->"
                                 + "[" + srcDevice.deviceName + "] " + record.toString());
+
+                        //Testing response time
+                        if(performanceAnalysis.addMac(srcDevice.deviceAddress)) {
+                            appendLogUiThread("\nDiscovery Test RESULT\n"
+                                    + performanceAnalysis.getDiscoveryTestStats());
+                        }
                     }
                 };
 
@@ -2084,13 +2101,17 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
     public void discoverServicesTask() {
         if (isWifiP2pEnabled) {
-            clearAllLocalServices();
-            sleep(500);
-            if (thisDeviceState == ThisDeviceState.COLLECTING_DEVICE_INFO
-                    || thisDeviceState == ThisDeviceState.GM_SELECTING_GO
+            if (!mDiscoverServiceOnDemand) {
+                //clearAllLocalServices();
+                clearAllServiceRequests();
+                sleep(500);
+                if (thisDeviceState == ThisDeviceState.COLLECTING_DEVICE_INFO
+                        || thisDeviceState == ThisDeviceState.GM_SELECTING_GO
                     /*|| thisDeviceState == ThisDeviceState.GO_SENDING_LEGACY_INFO*/) {
-                discoverServices();
-                performanceAnalysis.sentServiceDiscoveryRequestCount++;
+
+                    discoverServices();
+                    performanceAnalysis.sentServiceDiscoveryRequestCount++;
+                }
             }
         }
     }

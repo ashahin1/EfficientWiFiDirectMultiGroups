@@ -86,5 +86,9 @@
     <string name="pref_title_requested_no_of_runs">Requested No. Of Runs</string>
     <integer name="pref_default_requested_no_of_runs">-1</integer>
     <string name="pref_title_add_service_on_change">Add Device Service on Change Only</string>
+    <string name="pref_title_discover_service_on_demand">Discover Service on Demand</string>
+    <string name="pref_title_no_of_devices">Number of Devices</string>
+    <integer name="pref_default_no_of_devices">-1</integer>
     <bool name="pref_default_add_service_on_change">false</bool>
+    <bool name="pref_default_discover_service_on_demand">false</bool>
 </resources>

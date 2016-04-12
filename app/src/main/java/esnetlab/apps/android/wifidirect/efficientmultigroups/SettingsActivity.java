@@ -234,6 +234,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Pro
             setHasOptionsMenu(true);
 
             bindPreferenceSummaryToValue(findPreference(PREF_REQUESTED_NO_OF_RUNS));
+            bindPreferenceSummaryToValue(findPreference(PREF_NO_OF_DEVICES));
         }
 
         @Override

@@ -2,6 +2,7 @@ package esnetlab.apps.android.wifidirect.efficientmultigroups;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 
 /**
@@ -27,6 +28,11 @@ public class PerformanceAnalysis {
     public int beGoCount = 0;
     public int beGmCount = 0;
     public int bePmCount = 0;
+
+    public int noOfDevices = -1;
+    public long startTime = -1;
+    public long timeDiff = -1;
+    private final HashSet<String> macAddressList = new HashSet<>();
 
     //TODO: Add proxy mgmnt/data stats
     public void addDiscoveryStatistic(String discoveryPeerMacAddr, int length, boolean deviceInfo) {
@@ -166,6 +172,27 @@ public class PerformanceAnalysis {
         return str;
     }
 
+    public boolean addMac(String macAddress) {
+        boolean res = false;
+
+        macAddressList.add(macAddress);
+        if (macAddressList.size() == noOfDevices - 1) {
+            timeDiff = System.currentTimeMillis() - startTime;
+            res = true;
+        }
+
+        return res;
+    }
+
+    public String getDiscoveryTestStats() {
+        String str;
+        str = "============================="
+                + "\nNo of Devices: " + noOfDevices
+                + "\nResponse Time: " + timeDiff
+                + "\n================================";
+        return str;
+    }
+
     public void reset() {
         sentServiceDiscoveryRequestCount = 0;
         sentManagementSocketMessagesCount = 0;
@@ -175,6 +202,11 @@ public class PerformanceAnalysis {
         beGoCount = 0;
         beGmCount = 0;
         bePmCount = 0;
+
+        noOfDevices = -1;
+        startTime = -1;
+        timeDiff = -1;
+        macAddressList.clear();
 
         discoveryPeerStatisticsList.clear();
         socketPeerStatisticsList.clear();
