@@ -10,6 +10,7 @@ import java.util.Locale;
  */
 enum ProtocolTestMode {
     NO_TEST,
+    RESPONSE_TIME_TEST,
     IP_CONFLICT_TEST,
     GROUP_FORMATION_TEST,
     PROXY_SELECTION_TEST,
@@ -32,6 +33,8 @@ public class PerformanceAnalysis {
     public int noOfDevices = -1;
     public long startTime = -1;
     public long timeDiff = -1;
+
+    private final ArrayList<Long> responseTimes = new ArrayList<>();
     private final HashSet<String> macAddressList = new HashSet<>();
 
     //TODO: Add proxy mgmnt/data stats
@@ -147,6 +150,7 @@ public class PerformanceAnalysis {
                         "Total Times of Being GO: %d\n" +
                         "Total Times of Being GM: %d\n" +
                         "Total Times of Being PM: %d\n" +
+                        "Average Response Time: %d\n" +
                         "----------------------------------------------------------\n" +
                         "----------------Peers Info---------------------\n" +
                         "Total Device Info Received: %d\n" +
@@ -163,6 +167,7 @@ public class PerformanceAnalysis {
                 , beGoCount
                 , beGmCount
                 , bePmCount
+                , getAverage(responseTimes)
                 , totalDeviceInfoCount
                 , totalLegacyApCount
                 , totalMgtCount
@@ -178,10 +183,15 @@ public class PerformanceAnalysis {
         macAddressList.add(macAddress);
         if (macAddressList.size() == noOfDevices - 1) {
             timeDiff = System.currentTimeMillis() - startTime;
+            responseTimes.add(timeDiff);
             res = true;
         }
 
         return res;
+    }
+
+    public void resetMac() {
+        macAddressList.clear();
     }
 
     public String getDiscoveryTestStats() {
@@ -189,8 +199,23 @@ public class PerformanceAnalysis {
         str = "============================="
                 + "\nNo of Devices: " + noOfDevices
                 + "\nResponse Time: " + timeDiff
+                + "\nAverage Response Time: " + getAverage(responseTimes)
                 + "\n================================";
         return str;
+    }
+
+    private long getAverage(ArrayList<Long> arrayList) {
+        long av = 0;
+
+        if (arrayList.size() > 0) {
+            for (long element :
+                    arrayList) {
+                av += element;
+            }
+            av = av / arrayList.size();
+        }
+
+        return av;
     }
 
     public void reset() {
@@ -206,6 +231,8 @@ public class PerformanceAnalysis {
         noOfDevices = -1;
         startTime = -1;
         timeDiff = -1;
+
+        responseTimes.clear();
         macAddressList.clear();
 
         discoveryPeerStatisticsList.clear();

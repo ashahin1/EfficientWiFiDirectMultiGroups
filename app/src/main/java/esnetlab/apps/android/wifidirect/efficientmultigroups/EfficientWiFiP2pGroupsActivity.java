@@ -116,6 +116,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     private TextView txtReceived;
 
     private boolean streamingStarted = false;
+    private boolean runDone = false;
 
     private Thread mgntHandler = null;
     private Thread dataHandler = null;
@@ -368,19 +369,22 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                         discoverPeers();
                         break;
                     case R.id.action_create_service:
-                        removeDeviceInfoService();
-                        sleep(1000);
-                        updateMyDeviceDiscoveryInfo();
-                        createDeviceInfoService();
+                        createTestDeviceInfoService();
                         break;
                     case R.id.action_list_services:
-                        stopDiscoveringServices();
-                        sleep(1000);
-                        discoverServices();
-                        performanceAnalysis.reset();
+                        /*performanceAnalysis.reset();
                         performanceAnalysis.startTime = System.currentTimeMillis();
                         performanceAnalysis.noOfDevices = mNoOfDevices;
-                        performanceAnalysis.sentServiceDiscoveryRequestCount++;
+                        protocolTestMode = ProtocolTestMode.RESPONSE_TIME_TEST;
+
+                        Runnable runnable = new Runnable() {
+                            @Override
+                            public void run() {
+                                startResponseTimeTest();
+                            }
+                        };*/
+                        startResponseTimeTest();
+
                         break;
                     case R.id.action_ip_conflict_test:
                         startIpConflictTest();
@@ -455,6 +459,12 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
     }
 
+    private void createTestDeviceInfoService() {
+        removeDeviceInfoService();
+        sleep(1000);
+        updateMyDeviceDiscoveryInfo();
+        createDeviceInfoService();
+    }
 
     private void startEmcFullTest() {
         performanceAnalysis.reset();
@@ -484,6 +494,35 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         tearDownGroupAndReRun();
     }
 
+    private void startResponseTimeTest() {
+        /*if ((mRequestedNoOfRuns >= performanceAnalysis.runNumber)
+                && (protocolTestMode == ProtocolTestMode.RESPONSE_TIME_TEST)) {
+            stopDiscoveringServices();
+            sleep(1000);
+            runDone = false;
+            discoverServices();
+            performanceAnalysis.sentServiceDiscoveryRequestCount++;
+
+
+            long timeDiff;
+            while (!runDone) {
+                timeDiff = System.currentTimeMillis() - performanceAnalysis.startTime;
+                if (timeDiff > 20000) {
+                    runDone = true;
+                }
+                sleep(2000);
+            }
+        }*/
+
+        performanceAnalysis.reset();
+        appendLogUiThread("[*] Starting Response Time Test .................\n");
+        performanceAnalysis.startTime = System.currentTimeMillis();
+        performanceAnalysis.noOfDevices = mNoOfDevices;
+        protocolTestMode = ProtocolTestMode.RESPONSE_TIME_TEST;
+        tearDownGroupAndReRun();
+        //createTestDeviceInfoService();
+    }
+
     private void stopAllTests() {
         saveLog();
         clearLog();
@@ -491,6 +530,16 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         displayStatistics();
         protocolTestMode = ProtocolTestMode.NO_TEST;
         tearDownGroupAndReRun(false);
+    }
+
+    private void stopResponseTimeTest()
+    {
+        saveLog();
+        saveStatistics();
+        displayStatistics();
+        protocolTestMode = ProtocolTestMode.NO_TEST;
+        tearDownGroupAndReRun(false);
+        createDeviceInfoService();
     }
 
     private void displayStatistics() {
@@ -1112,9 +1161,22 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                                 + "[" + srcDevice.deviceName + "] " + record.toString());
 
                         //Testing response time
-                        if(performanceAnalysis.addMac(srcDevice.deviceAddress)) {
-                            appendLogUiThread("\nDiscovery Test RESULT\n"
-                                    + performanceAnalysis.getDiscoveryTestStats());
+                        if (protocolTestMode == ProtocolTestMode.RESPONSE_TIME_TEST) {
+                            if ((mRequestedNoOfRuns == -1) || (mRequestedNoOfRuns > performanceAnalysis.runNumber)) {
+                                if (performanceAnalysis.addMac(srcDevice.deviceAddress)) {
+                                    appendLogUiThread("\nRUN NUMBER "
+                                            + performanceAnalysis.runNumber
+                                            + "\nDiscovery Test RESULT\n"
+                                            + performanceAnalysis.getDiscoveryTestStats());
+
+                                    performanceAnalysis.runNumber++;
+                                    tearDownGroupAndReRun();
+                                    //createTestDeviceInfoService();
+                                    runDone = true;
+                                }
+                            } else if (mRequestedNoOfRuns == performanceAnalysis.runNumber) {
+                                stopResponseTimeTest();
+                            }
                         }
                     }
                 };
@@ -1125,6 +1187,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                     public void onDnsSdServiceAvailable(String instanceName,
                                                         String registrationType,
                                                         WifiP2pDevice srcDevice) {
+
+                        if(protocolTestMode == ProtocolTestMode.RESPONSE_TIME_TEST) return;
 
                         if (instanceName.equals(SERVICE_INSTANCE)) {
                             if (buddies.containsKey(srcDevice.deviceAddress)) {
@@ -1141,13 +1205,15 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                                         , length
                                         , isDeviceInfoRecord(rec));
 
-                                //If I am in collecting device info phase I should check if my
-                                // proposed IP is conflicting with other devices or not.
-                                if (discoveryPeersInfo.isMyProposedIpConflicting(myProposedIP
-                                        , discoveryPeersInfo.extractConflictedIpsFromPeer(getProposedIpRecordElement(rec)))) {
-                                    performanceAnalysis.conflictIpCount++;
-                                    appendLogUiThread("My Proposed IP [" + myProposedIP + "] is conflicting, trying a new one");
-                                    myProposedIP = discoveryPeersInfo.getConflictFreeIP();
+                                if(thisDeviceState == ThisDeviceState.COLLECTING_DEVICE_INFO) {
+                                    //If I am in collecting device info phase I should check if my
+                                    // proposed IP is conflicting with other devices or not.
+                                    if (discoveryPeersInfo.isMyProposedIpConflicting(myProposedIP
+                                            , discoveryPeersInfo.extractConflictedIpsFromPeer(getProposedIpRecordElement(rec)))) {
+                                        performanceAnalysis.conflictIpCount++;
+                                        appendLogUiThread("My Proposed IP [" + myProposedIP + "] is conflicting, trying a new one");
+                                        myProposedIP = discoveryPeersInfo.getConflictFreeIP();
+                                    }
                                 }
 
                                 // If a new group info (SSID, Key) is received while I am collecting
@@ -1708,14 +1774,18 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         }
 
         if (reRun) {
+            appendLogUiThread("\n========================================\n" +
+                    "+RUN NUMBER: " + performanceAnalysis.runNumber
+                    + "\n========================================\n");
+            if (protocolTestMode != ProtocolTestMode.RESPONSE_TIME_TEST) {
+                declareGoHandler.postDelayed(declareGoRunnable, mDeclareGoPeriod);
+                myProposedIP = Utilities.generateProposedIP();
+                appendLogUiThread("My Proposed IP address is [" + myProposedIP + "]");
+            }
 
-            declareGoHandler.postDelayed(declareGoRunnable, mDeclareGoPeriod);
             thisDeviceState = ThisDeviceState.COLLECTING_DEVICE_INFO;
-
             startTimers();
 
-            myProposedIP = Utilities.generateProposedIP();
-            appendLogUiThread("My Proposed IP address is [" + myProposedIP + "]");
             updateMyDeviceDiscoveryInfo();
             createDeviceInfoService();
         }
@@ -2109,6 +2179,11 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                         || thisDeviceState == ThisDeviceState.GM_SELECTING_GO
                     /*|| thisDeviceState == ThisDeviceState.GO_SENDING_LEGACY_INFO*/) {
 
+                    if (protocolTestMode == ProtocolTestMode.RESPONSE_TIME_TEST) {
+                        performanceAnalysis.startTime = System.currentTimeMillis();
+                        performanceAnalysis.resetMac();
+                    }
+
                     discoverServices();
                     performanceAnalysis.sentServiceDiscoveryRequestCount++;
                 }
@@ -2117,6 +2192,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     }
 
     public void addServicesTask() {
+        if (protocolTestMode == ProtocolTestMode.RESPONSE_TIME_TEST) return;
         if (isWifiP2pEnabled) {
             Runnable r1 = new Runnable() {
                 @Override
