@@ -106,7 +106,7 @@ public class Utilities {
         return ipAddressString;
     }
 
-    static public String generateProposedIP() {
+    static public String generateProposedIP(int maxSubnetX, int maxSubnetY) {
         //Initialize the seed based on the least significant byte of the wifi mac address
         if (random == null) {
             byte[] macBytes = getWifiMacAddressLeastByte();
@@ -123,14 +123,14 @@ public class Utilities {
         }
 
         //Avoid 10.0.x.x and 10.1.x.x and 10.10.x.x
-        int ip2Octet = random.nextInt(254);
+        int ip2Octet = random.nextInt(maxSubnetX);
         while ((ip2Octet == 0) || (ip2Octet == 1) || (ip2Octet == 10))
-            ip2Octet = random.nextInt(254);
+            ip2Octet = random.nextInt(maxSubnetX);
 
         //Avoid 10.x.0.x and 10.x.1.x
-        int ip3octet = random.nextInt(254);
+        int ip3octet = random.nextInt(maxSubnetY);
         while ((ip3octet == 0) || (ip3octet == 1))
-            ip3octet = random.nextInt(254);
+            ip3octet = random.nextInt(maxSubnetY);
 
         return ip2Octet + "." + ip3octet;
     }

@@ -152,7 +152,8 @@ public class PerformanceAnalysis {
                         "Total Device Info Received: %d\n" +
                         "Total LegacyAp Info Received: %d\n" +
                         "Total Management Msg Received: %d\n" +
-                        "Total Data Msg Received: %d\n\n" +
+                        "Total Data Msg Received: %d\n" +
+                        "Total Service Discovery Bandwidth: %f Bytes/Sec\n\n"+
                         "%s" +
                         "------------------------------------------------\n"
                 , thisDeviceMAC
@@ -167,6 +168,7 @@ public class PerformanceAnalysis {
                 , totalLegacyApCount
                 , totalMgtCount
                 , totalDataCount
+                ,getTotalDiscoveryBandwidth()
                 , pStr);
 
         return str;
@@ -191,6 +193,17 @@ public class PerformanceAnalysis {
                 + "\nResponse Time: " + timeDiff
                 + "\n================================";
         return str;
+    }
+
+    public float getTotalDiscoveryBandwidth() {
+        float bw = 0;
+
+        for (DiscoveryPeerStatistics peerStatistics:
+             discoveryPeerStatisticsList) {
+            bw += peerStatistics.deviceInfoMessageCounter.getBandwidth();
+        }
+
+        return bw;
     }
 
     public void reset() {

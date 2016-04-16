@@ -235,6 +235,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Pro
 
             bindPreferenceSummaryToValue(findPreference(PREF_REQUESTED_NO_OF_RUNS));
             bindPreferenceSummaryToValue(findPreference(PREF_NO_OF_DEVICES));
+            bindPreferenceSummaryToValue(findPreference(PREF_SUBNET_X));
+            bindPreferenceSummaryToValue(findPreference(PREF_SUBNET_Y));
         }
 
         @Override

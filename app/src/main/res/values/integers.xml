@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Settings Protocol Timing -->
+    <integer name="pref_default_send_my_info">2000</integer>
+    <integer name="pref_default_send_peers_info">4000</integer>
+    <integer name="pref_default_discover_services">6000</integer>
+    <integer name="pref_default_add_services">3000</integer>
+    <integer name="pref_default_declare_go">30000</integer>
+    <integer name="pref_default_decide_group">15000</integer>
+    <integer name="pref_default_decide_proxy">40000</integer>
+    <integer name="pref_default_send_nearby_legacy_aps_info">3000</integer>
+    <integer name="pref_default_send_tear_down">300000</integer>
+    <!-- Settings for Ports -->
+    <integer name="pref_default_group_management_port">4546</integer>
+    <integer name="pref_default_group_data_port">4545</integer>
+    <integer name="pref_default_proxy_management_port">4544</integer>
+    <integer name="pref_default_proxy_data_port">4543</integer>
+    <!-- Setting for Testing Parameters -->
+    <integer name="pref_default_requested_no_of_runs">-1</integer>
+    <integer name="pref_default_no_of_devices">-1</integer>
+    <integer name="pref_default_subnet_x">254</integer>
+    <integer name="pref_default_subnet_y">254</integer>
+</resources>

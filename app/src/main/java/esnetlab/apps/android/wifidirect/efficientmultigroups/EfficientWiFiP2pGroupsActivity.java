@@ -90,6 +90,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     public static boolean mAddServiceOnChange;
     public static boolean mDiscoverServiceOnDemand;
     public static int mNoOfDevices;
+    public static int mMaxSubnetX;
+    public static int mMaxSubnetY;
 
     public static WifiP2pInfo p2pInfo = null;
     public static WifiP2pGroup p2pGroup = null;
@@ -109,7 +111,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     public ThisDeviceState thisDeviceState = ThisDeviceState.STARTED;
     public ProtocolTestMode protocolTestMode = ProtocolTestMode.NO_TEST;
 
-    public String myProposedIP = Utilities.generateProposedIP();
+    public String myProposedIP;// = Utilities.generateProposedIP();
 
     private TextView txtLog;
     private EditText txtSend;
@@ -275,6 +277,10 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             mDiscoverServiceOnDemand = sharedPreferences.getBoolean(PREF_DISCOVER_SERVICES_ON_DEMAND, pBool);
             pInt = getResources().getInteger(R.integer.pref_default_no_of_devices);
             mNoOfDevices = Integer.parseInt(sharedPreferences.getString(PREF_NO_OF_DEVICES, String.valueOf(pInt)));
+            pInt = getResources().getInteger(R.integer.pref_default_subnet_x);
+            mMaxSubnetX = Integer.parseInt(sharedPreferences.getString(PREF_SUBNET_X, String.valueOf(pInt)));
+            pInt = getResources().getInteger(R.integer.pref_default_subnet_y);
+            mMaxSubnetY = Integer.parseInt(sharedPreferences.getString(PREF_SUBNET_Y, String.valueOf(pInt)));
 
         }
     }
@@ -532,7 +538,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
     @NonNull
     private String getHeaderString() {
-        return "...................EMC....................\n"
+        return "...................EMC-IRMC....................\n"
                 + "NUMBER OF RUNS: " + performanceAnalysis.runNumber + "\n"
                 + "TEST TYPE: " + protocolTestMode.toString() + "\n"
                 + "DATE: " + Calendar.getInstance().getTime().toString() + "\n"
@@ -1028,7 +1034,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         wifiP2pManager.addLocalService(wifiP2pChannel, serviceDeviceInfo, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-                appendLogUiThread("Service DeviceInfo added successfully");
+                appendLogUiThread("Service DeviceInfo added successfully", true);
             }
 
             @Override
@@ -1043,7 +1049,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             wifiP2pManager.removeLocalService(wifiP2pChannel, serviceDeviceInfo, new WifiP2pManager.ActionListener() {
                 @Override
                 public void onSuccess() {
-                    appendLogUiThread("Remove DeviceInfo local service succeeded");
+                    appendLogUiThread("Remove DeviceInfo local service succeeded", true);
                     serviceDeviceInfo = null;
                 }
 
@@ -1087,7 +1093,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             wifiP2pManager.removeLocalService(wifiP2pChannel, serviceInfoLegacyAp, new WifiP2pManager.ActionListener() {
                 @Override
                 public void onSuccess() {
-                    appendLogUiThread("Remove LegacyAP local service succeeded");
+                    appendLogUiThread("Remove LegacyAP local service succeeded", true);
                     serviceInfoLegacyAp = null;
                 }
 
@@ -1111,11 +1117,13 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                         appendLogUiThread("DnsSdTxtRecord available ->"
                                 + "[" + srcDevice.deviceName + "] " + record.toString());
 
+                        /*
                         //Testing response time
                         if(performanceAnalysis.addMac(srcDevice.deviceAddress)) {
                             appendLogUiThread("\nDiscovery Test RESULT\n"
                                     + performanceAnalysis.getDiscoveryTestStats());
                         }
+                        */
                     }
                 };
 
@@ -1147,7 +1155,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                                         , discoveryPeersInfo.extractConflictedIpsFromPeer(getProposedIpRecordElement(rec)))) {
                                     performanceAnalysis.conflictIpCount++;
                                     appendLogUiThread("My Proposed IP [" + myProposedIP + "] is conflicting, trying a new one");
-                                    myProposedIP = discoveryPeersInfo.getConflictFreeIP();
+                                    myProposedIP = discoveryPeersInfo.getConflictFreeIP(mMaxSubnetX, mMaxSubnetY);
                                 }
 
                                 // If a new group info (SSID, Key) is received while I am collecting
@@ -1219,7 +1227,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
                     new WifiP2pManager.ActionListener() {
                         @Override
                         public void onSuccess() {
-                            appendLogUiThread("Removed previous service request succeeded");
+                            appendLogUiThread("Removed previous service request succeeded", true);
                         }
 
                         @Override
@@ -1714,7 +1722,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
             startTimers();
 
-            myProposedIP = Utilities.generateProposedIP();
+            myProposedIP = Utilities.generateProposedIP(mMaxSubnetX, mMaxSubnetY);
             appendLogUiThread("My Proposed IP address is [" + myProposedIP + "]");
             updateMyDeviceDiscoveryInfo();
             createDeviceInfoService();

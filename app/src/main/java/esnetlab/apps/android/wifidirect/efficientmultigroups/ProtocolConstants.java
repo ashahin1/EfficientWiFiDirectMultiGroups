@@ -60,4 +60,6 @@ public interface ProtocolConstants {
     String PREF_ADD_SERVICE_ON_CHANGE = "add_service_on_change_switch";
     String PREF_DISCOVER_SERVICES_ON_DEMAND = "discover_service_on_demand_switch";
     String PREF_NO_OF_DEVICES = "no_of_devices_text";
+    String PREF_SUBNET_X = "subnet_x_text";
+    String PREF_SUBNET_Y = "subnet_y_text";
 }

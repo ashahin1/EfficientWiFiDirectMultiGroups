@@ -29,4 +29,24 @@
         android:selectAllOnFocus="true"
         android:singleLine="true"
         android:title="@string/pref_title_no_of_devices" />
+    <EditTextPreference
+        android:capitalize="words"
+        android:defaultValue="@integer/pref_default_subnet_x"
+        android:inputType="number"
+        android:numeric="integer"
+        android:key="subnet_x_text"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_subnet_x" />
+    <EditTextPreference
+        android:capitalize="words"
+        android:defaultValue="@integer/pref_default_subnet_y"
+        android:inputType="number"
+        android:numeric="integer"
+        android:key="subnet_y_text"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_subnet_y" />
 </PreferenceScreen>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Setting for Testing Parameters -->
+    <bool name="pref_default_add_service_on_change">false</bool>
+    <bool name="pref_default_discover_service_on_demand">false</bool>
+</resources>

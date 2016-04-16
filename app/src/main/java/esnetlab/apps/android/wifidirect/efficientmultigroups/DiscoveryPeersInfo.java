@@ -281,11 +281,11 @@ public class DiscoveryPeersInfo implements ProtocolConstants {
         return str[0];
     }
 
-    public String getConflictFreeIP() {
-        String pIP = Utilities.generateProposedIP();
+    public String getConflictFreeIP(int maxsubnetX, int maxSubnetY) {
+        String pIP = Utilities.generateProposedIP(maxsubnetX, maxSubnetY);
 
         while (isMyProposedIpConflicting(pIP, "")) {
-            pIP = Utilities.generateProposedIP();
+            pIP = Utilities.generateProposedIP(maxsubnetX, maxSubnetY);
         }
 
         return pIP;
