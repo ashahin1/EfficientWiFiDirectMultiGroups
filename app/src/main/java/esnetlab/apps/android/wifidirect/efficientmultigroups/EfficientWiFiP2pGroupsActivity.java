@@ -155,36 +155,11 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     private final Handler sendNearbyLegacyApsInfoHandler = new Handler();
 
     //Runnables
-    private final Runnable declareGoRunnable = new Runnable() {
-        @Override
-        public void run() {
-            declareGo();
-        }
-    };
-    private final Runnable decideGroupRunnable = new Runnable() {
-        @Override
-        public void run() {
-            decideGroupAndConnect();
-        }
-    };
-    private final Runnable declareGoAcceptingGMsRunnable = new Runnable() {
-        @Override
-        public void run() {
-            declareGoAcceptingGMs();
-        }
-    };
-    private final Runnable decideProxyRunnable = new Runnable() {
-        @Override
-        public void run() {
-            decideProxiesAndInformMembers();
-        }
-    };
-    private final Runnable sendNearbyLegacyApsInfoRunnable = new Runnable() {
-        @Override
-        public void run() {
-            sendNearbyLegacyApsInfo();
-        }
-    };
+    private final Runnable declareGoRunnable = this::declareGo;
+    private final Runnable decideGroupRunnable = this::decideGroupAndConnect;
+    private final Runnable declareGoAcceptingGMsRunnable = this::declareGoAcceptingGMs;
+    private final Runnable decideProxyRunnable = this::decideProxiesAndInformMembers;
+    private final Runnable sendNearbyLegacyApsInfoRunnable = this::sendNearbyLegacyApsInfo;
     private final Runnable tearDownRunnable = new Runnable() {
         @Override
         public void run() {
@@ -196,12 +171,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
             }
         }
     };
-    private final Runnable sendTearDownRunnable = new Runnable() {
-        @Override
-        public void run() {
-            sendTearDownToMembers();
-        }
-    };
+    private final Runnable sendTearDownRunnable = this::sendTearDownToMembers;
     //End of Runnables
 
 
@@ -313,31 +283,25 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         txtSend = (EditText) findViewById(R.id.txt_send);
         txtReceived = (TextView) findViewById(R.id.txt_received);
 
-        txtReceived.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View v) {
-                ((TextView) v).setText("");
-                return false;
-            }
+        txtReceived.setOnLongClickListener(v -> {
+            ((TextView) v).setText("");
+            return false;
         });
 
         final Button btnSend = (Button) findViewById(R.id.btn_send);
         if (btnSend != null) {
-            btnSend.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    String dataToSend = txtSend.getText().toString();
-                    if (!dataToSend.equals("")) {
-                        int count = groupSocketPeers.sendToAllDataSockets(dataToSend, MessageType.DATA_GM_TO_GROUP);
-                        if (count > 0) {
-                            performanceAnalysis.sentDataSocketMessagesCount += count;
-                            forwardIfMeIsProxy(dataToSend);
-                            txtReceived.append("Data msg Sent -> [ME]: " + dataToSend + "\n");
-                            txtSend.setText("");
-                            txtSend.clearFocus();
-                        } else {
-                            Toast.makeText(v.getContext(), "Not connected to any peers!", Toast.LENGTH_SHORT).show();
-                        }
+            btnSend.setOnClickListener(v -> {
+                String dataToSend = txtSend.getText().toString();
+                if (!dataToSend.equals("")) {
+                    int count = groupSocketPeers.sendToAllDataSockets(dataToSend, MessageType.DATA_GM_TO_GROUP);
+                    if (count > 0) {
+                        performanceAnalysis.sentDataSocketMessagesCount += count;
+                        forwardIfMeIsProxy(dataToSend);
+                        txtReceived.append("Data msg Sent -> [ME]: " + dataToSend + "\n");
+                        txtSend.setText("");
+                        txtSend.clearFocus();
+                    } else {
+                        Toast.makeText(v.getContext(), "Not connected to any peers!", Toast.LENGTH_SHORT).show();
                     }
                 }
             });
@@ -346,12 +310,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         final FloatingActionButton btnFab = (FloatingActionButton) findViewById(R.id.fab);
 
         if (btnFab != null) {
-            btnFab.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    initPopMenu(v);
-                }
-            });
+            btnFab.setOnClickListener(this::initPopMenu);
         }
     }
 
@@ -512,26 +471,18 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     }
 
     private void clearLog() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                txtLog.setText("");
-            }
-        });
+        runOnUiThread(() -> txtLog.setText(""));
     }
 
     private void saveLog() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                String str = getHeaderString();
-                str += txtLog.getText().toString();
+        runOnUiThread(() -> {
+            String str = getHeaderString();
+            str += txtLog.getText().toString();
 
-                if (Utilities.writeStringToFile(str, "EMC_log_" + Build.MODEL + "_")) {
-                    Toast.makeText(getApplicationContext(), "Log saved successfully", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(getApplicationContext(), "Log failed to save", Toast.LENGTH_SHORT).show();
-                }
+            if (Utilities.writeStringToFile(str, "EMC_log_" + Build.MODEL + "_")) {
+                Toast.makeText(getApplicationContext(), "Log saved successfully", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(getApplicationContext(), "Log failed to save", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -551,22 +502,19 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
         if ((thisDeviceState == ThisDeviceState.GM_COMMUNICATING_WITH_GO)
                 || thisDeviceState == ThisDeviceState.GO_ACCEPTING_CONNECTIONS) {
             streamingStarted = true;
-            Thread th2 = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    String randomDataToSend = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
-                    while (streamingStarted) {
-                        int count = groupSocketPeers.sendToAllDataSockets(randomDataToSend, MessageType.STREAM_DATA_TEST);
-                        if (count > 0) {
-                            performanceAnalysis.sentDataSocketMessagesCount += count;
-                            forwardIfMeIsProxy(randomDataToSend);
-                            appendLogReceivedUiThread("StreamData -> [ME]: ...");
-                        }
-                        try {
-                            Thread.sleep(10);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+            Thread th2 = new Thread(() -> {
+                String randomDataToSend = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+                while (streamingStarted) {
+                    int count = groupSocketPeers.sendToAllDataSockets(randomDataToSend, MessageType.STREAM_DATA_TEST);
+                    if (count > 0) {
+                        performanceAnalysis.sentDataSocketMessagesCount += count;
+                        forwardIfMeIsProxy(randomDataToSend);
+                        appendLogReceivedUiThread("StreamData -> [ME]: ...");
+                    }
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
                 }
             });
@@ -809,19 +757,16 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     }
 
     public void requestGroupInfo() {
-        wifiP2pManager.requestGroupInfo(wifiP2pChannel, new WifiP2pManager.GroupInfoListener() {
-            @Override
-            public void onGroupInfoAvailable(WifiP2pGroup group) {
-                p2pGroup = group;
-                if (p2pGroup.isGroupOwner()) {
-                    String legacySSID = group.getNetworkName();
-                    String legacyPassPhrase = group.getPassphrase();
-                    appendLog("LegacySSID -> " + legacySSID);
-                    appendLog("LegacyPassPhrase -> " + legacyPassPhrase);
+        wifiP2pManager.requestGroupInfo(wifiP2pChannel, group -> {
+            p2pGroup = group;
+            if (p2pGroup.isGroupOwner()) {
+                String legacySSID = group.getNetworkName();
+                String legacyPassPhrase = group.getPassphrase();
+                appendLog("LegacySSID -> " + legacySSID);
+                appendLog("LegacyPassPhrase -> " + legacyPassPhrase);
 
-                    updateMyLegacyApDiscoveryInfo();
-                    createLegacyApService();
-                }
+                updateMyLegacyApDiscoveryInfo();
+                createLegacyApService();
             }
         });
     }
@@ -879,10 +824,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     }
 
     private boolean checkGroupFormedByMe() {
-        if (p2pInfo != null) {
-            return p2pInfo.groupFormed && p2pInfo.isGroupOwner;
-        }
-        return false;
+        return p2pInfo != null && p2pInfo.groupFormed && p2pInfo.isGroupOwner;
     }
 
     public void createWifiP2pGroup() {
@@ -1106,25 +1048,20 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
     private synchronized void discoverServices() {
         WifiP2pManager.DnsSdTxtRecordListener txtListener =
-                new WifiP2pManager.DnsSdTxtRecordListener() {
-                    @Override
-                    public void onDnsSdTxtRecordAvailable(String fullDomainName,
-                                                          Map<String, String> record,
-                                                          WifiP2pDevice srcDevice) {
-                        if (record.containsKey(RECORD_KEY))
-                            encryptDecryptRecordElement(record, false, RECORD_KEY);
-                        buddies.put(srcDevice.deviceAddress, record);
-                        appendLogUiThread("DnsSdTxtRecord available ->"
-                                + "[" + srcDevice.deviceName + "] " + record.toString());
+                (fullDomainName, record, srcDevice) -> {
+                    if (record.containsKey(RECORD_KEY))
+                        encryptDecryptRecordElement(record, false, RECORD_KEY);
+                    buddies.put(srcDevice.deviceAddress, record);
+                    appendLogUiThread("DnsSdTxtRecord available ->"
+                            + "[" + srcDevice.deviceName + "] " + record.toString());
 
-                        /*
-                        //Testing response time
-                        if(performanceAnalysis.addMac(srcDevice.deviceAddress)) {
-                            appendLogUiThread("\nDiscovery Test RESULT\n"
-                                    + performanceAnalysis.getDiscoveryTestStats());
-                        }
-                        */
+                    /*
+                    //Testing response time
+                    if(performanceAnalysis.addMac(srcDevice.deviceAddress)) {
+                        appendLogUiThread("\nDiscovery Test RESULT\n"
+                                + performanceAnalysis.getDiscoveryTestStats());
                     }
+                    */
                 };
 
         WifiP2pManager.DnsSdServiceResponseListener servListener =
@@ -1320,37 +1257,34 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     }
 
     public void connectToLegacyApAndOpenSockets(final String SSID, final String passPhrase) {
-        Thread conThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Date startDate = new Date();//log the start time
-                List<ScanResult> scanResults;
-                wifiScanCompleted = false;
-                if (wifiManager.startScan()) {
-                    //Wait scan completed
-                    while (!wifiScanCompleted) {
-                        final long timeDiff = (new Date()).getTime() - startDate.getTime();
-                        if (timeDiff > 30000) //if we took more than 30 seconds break
+        Thread conThread = new Thread(() -> {
+            Date startDate = new Date();//log the start time
+            List<ScanResult> scanResults;
+            wifiScanCompleted = false;
+            if (wifiManager.startScan()) {
+                //Wait scan completed
+                while (!wifiScanCompleted) {
+                    final long timeDiff = (new Date()).getTime() - startDate.getTime();
+                    if (timeDiff > 30000) //if we took more than 30 seconds break
+                        break;
+                    sleep(1000);
+                }
+                if (wifiScanCompleted) {
+                    appendLogUiThread("Scan result found");
+                    scanResults = wifiManager.getScanResults();
+
+                    for (ScanResult scanResult : scanResults) {
+                        if (scanResult.SSID.equals(SSID)) {
+                            configureAndConnectToLegacyAp(scanResult.BSSID, SSID, passPhrase);
+
+                            performanceAnalysis.bePmCount++;
+                            //Try opening sockets connections with legacyAp
+                            openLegacySocketConnections();
                             break;
-                        sleep(1000);
-                    }
-                    if (wifiScanCompleted) {
-                        appendLogUiThread("Scan result found");
-                        scanResults = wifiManager.getScanResults();
-
-                        for (ScanResult scanResult : scanResults) {
-                            if (scanResult.SSID.equals(SSID)) {
-                                configureAndConnectToLegacyAp(scanResult.BSSID, SSID, passPhrase);
-
-                                performanceAnalysis.bePmCount++;
-                                //Try opening sockets connections with legacyAp
-                                openLegacySocketConnections();
-                                break;
-                            }
                         }
-                    } else appendLogUiThread("Cannot get the result of a WiFi Scan!!");
-                } else appendLogUiThread("Cannot start a WiFi Scan!!");
-            }
+                    }
+                } else appendLogUiThread("Cannot get the result of a WiFi Scan!!");
+            } else appendLogUiThread("Cannot start a WiFi Scan!!");
         });
         conThread.start();
     }
@@ -1434,12 +1368,7 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     }
 
     public void appendLogReceivedUiThread(final String string) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                appendLogReceived(string);
-            }
-        });
+        runOnUiThread(() -> appendLogReceived(string));
     }
 
     public synchronized void appendLog(String string, Boolean logCatOnly, Boolean noNewLine) {
@@ -1459,21 +1388,11 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     }
 
     public void appendLogUiThread(final String string) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                appendLog(string, false, false);
-            }
-        });
+        runOnUiThread(() -> appendLog(string, false, false));
     }
 
     public void appendLogUiThread(final String string, final boolean logCatOnly) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                appendLog(string, logCatOnly, false);
-            }
-        });
+        runOnUiThread(() -> appendLog(string, logCatOnly, false));
     }
 
     public void updateThisDevice(WifiP2pDevice device) {
@@ -1488,11 +1407,8 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     }
 
     public void requestP2pPeers() {
-        wifiP2pManager.requestPeers(wifiP2pChannel, new WifiP2pManager.PeerListListener() {
-            @Override
-            public void onPeersAvailable(WifiP2pDeviceList peers) {
-                //displayPeers(peers);
-            }
+        wifiP2pManager.requestPeers(wifiP2pChannel, peers -> {
+            //displayPeers(peers);
         });
     }
 
@@ -1507,20 +1423,17 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
     }
 
     private void tapAcceptInvitationAutomatically() {
-        Thread thrd = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    if (Build.MODEL.equals("GT-P3113")) {
-                        for (int i = 0; i < 1; i++) {
-                            Process process = Runtime.getRuntime().exec(
-                                    String.format("su -c input tap %d %d", 440, 565 + i));
-                            process.waitFor();
-                            Log.e("SU input tap", "input tap command finished " + (565 + i));
-                        }
+        Thread thrd = new Thread(() -> {
+            try {
+                if (Build.MODEL.equals("GT-P3113")) {
+                    for (int i = 0; i < 1; i++) {
+                        Process process = Runtime.getRuntime().exec(
+                                String.format("su -c input tap %d %d", 440, 565 + i));
+                        process.waitFor();
+                        Log.e("SU input tap", "input tap command finished " + (565 + i));
                     }
-                } catch (IOException | InterruptedException ignored) {
                 }
+            } catch (IOException | InterruptedException ignored) {
             }
         });
         thrd.start();
@@ -1983,39 +1896,36 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
     private void openLegacySocketConnections() {
         try {
-            Thread th1 = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    if (wifiManager != null) {
-                        if (wifiManager.getWifiState() == WifiManager.WIFI_STATE_ENABLED) {
-                            Date startDate = new Date();
-                            long timeDiff;
+            Thread th1 = new Thread(() -> {
+                if (wifiManager != null) {
+                    if (wifiManager.getWifiState() == WifiManager.WIFI_STATE_ENABLED) {
+                        Date startDate = new Date();
+                        long timeDiff;
 
-                            while (wifiManager.getConnectionInfo().getSupplicantState() != SupplicantState.COMPLETED) {
-                                timeDiff = (new Date()).getTime() - startDate.getTime();
-                                //if we took more than 30 seconds break
-                                if (timeDiff > 30000) {
-                                    appendLogUiThread("Can't open socket connections with LegacyAp -> Not associated");
-                                    return;
-                                }
-                                appendLogUiThread("Waiting for association with LegacyAp to complete to connect sockets...");
-                                sleep(1000);
+                        while (wifiManager.getConnectionInfo().getSupplicantState() != SupplicantState.COMPLETED) {
+                            timeDiff = (new Date()).getTime() - startDate.getTime();
+                            //if we took more than 30 seconds break
+                            if (timeDiff > 30000) {
+                                appendLogUiThread("Can't open socket connections with LegacyAp -> Not associated");
+                                return;
                             }
+                            appendLogUiThread("Waiting for association with LegacyAp to complete to connect sockets...");
+                            sleep(1000);
+                        }
 
-                            sleep(10000);
-                            String legacyApIpAddress = getMyLegacyApIP();
-                            if (legacyApIpAddress != null) {
-                                appendLogUiThread("Connecting to LegacyAp Sockets -> " + legacyApIpAddress);
-                                Thread thrd1 = new ClientSocketHandler(getHandler(),
-                                        legacyApIpAddress, mProxyMgmntPort);
-                                thrd1.start();
+                        sleep(10000);
+                        String legacyApIpAddress = getMyLegacyApIP();
+                        if (legacyApIpAddress != null) {
+                            appendLogUiThread("Connecting to LegacyAp Sockets -> " + legacyApIpAddress);
+                            Thread thrd1 = new ClientSocketHandler(getHandler(),
+                                    legacyApIpAddress, mProxyMgmntPort);
+                            thrd1.start();
 
-                                Thread thrd2 = new ClientSocketHandler(getHandler(),
-                                        legacyApIpAddress, mProxyDataPort);
-                                thrd2.start();
-                            } else {
-                                appendLogUiThread("Can't get the IP Address of the LegacyAp");
-                            }
+                            Thread thrd2 = new ClientSocketHandler(getHandler(),
+                                    legacyApIpAddress, mProxyDataPort);
+                            thrd2.start();
+                        } else {
+                            appendLogUiThread("Can't get the IP Address of the LegacyAp");
                         }
                     }
                 }
@@ -2126,32 +2036,26 @@ public class EfficientWiFiP2pGroupsActivity extends AppCompatActivity implements
 
     public void addServicesTask() {
         if (isWifiP2pEnabled) {
-            Runnable r1 = new Runnable() {
-                @Override
-                public void run() {
-                    if (thisDeviceState == ThisDeviceState.COLLECTING_DEVICE_INFO
-                            || thisDeviceState == ThisDeviceState.GO_SENDING_LEGACY_INFO
-                            || thisDeviceState == ThisDeviceState.GO_ACCEPTING_CONNECTIONS) {
-                        if (isReSendingDeviceInfoRequired()) {
-                            removeDeviceInfoService();
-                            sleep(500);
-                            createDeviceInfoService();
-                        }
+            Runnable r1 = () -> {
+                if (thisDeviceState == ThisDeviceState.COLLECTING_DEVICE_INFO
+                        || thisDeviceState == ThisDeviceState.GO_SENDING_LEGACY_INFO
+                        || thisDeviceState == ThisDeviceState.GO_ACCEPTING_CONNECTIONS) {
+                    if (isReSendingDeviceInfoRequired()) {
+                        removeDeviceInfoService();
+                        sleep(500);
+                        createDeviceInfoService();
                     }
                 }
             };
             r1.run();
 
-            Runnable r2 = new Runnable() {
-                @Override
-                public void run() {
-                    if (thisDeviceState == ThisDeviceState.GO_SENDING_LEGACY_INFO
-                            || thisDeviceState == ThisDeviceState.GO_ACCEPTING_CONNECTIONS) {
-                        if (isReSendingLegacyApInfoRequired()) {
-                            removeLegacyApService();
-                            sleep(500);
-                            createLegacyApService();
-                        }
+            Runnable r2 = () -> {
+                if (thisDeviceState == ThisDeviceState.GO_SENDING_LEGACY_INFO
+                        || thisDeviceState == ThisDeviceState.GO_ACCEPTING_CONNECTIONS) {
+                    if (isReSendingLegacyApInfoRequired()) {
+                        removeLegacyApService();
+                        sleep(500);
+                        createLegacyApService();
                     }
                 }
             };
