@@ -5,7 +5,7 @@ import android.os.Handler;
 /**
  * Created by Ahmed on 4/6/2015.
  */
-public interface MessageTarget {
+interface MessageTarget {
 
     Handler getHandler();
 }

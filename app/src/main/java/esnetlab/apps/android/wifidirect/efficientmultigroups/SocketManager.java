@@ -7,37 +7,35 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.Arrays;
 
 /**
  * Created by Ahmed on 4/8/2015.
  */
-public class SocketManager implements Runnable, ProtocolConstants {
+class SocketManager implements Runnable, ProtocolConstants {
 
     private static final String TAG = "SocketManager";
-    public PeerConnectionListener pListner = null;
+    PeerConnectionListener pListner = null;
     private Socket socket = null;
     private Handler handler;
-    private InputStream iStream;
     private OutputStream oStream;
     private int whatHandle;
     private int whatRead;
-    private int port;
 
-    public SocketManager(Socket socket, Handler handler, int portUsed/*boolean isDataSocket*/) {
+    SocketManager(Socket socket, Handler handler, int portUsed/*boolean isDataSocket*/) {
         this.socket = socket;
         this.handler = handler;
-        this.port = portUsed;
         //this.isDataSocket = isDataSocket;
-        if (port == EfficientWiFiP2pGroupsActivity.mMgmntPort) {
+        if (portUsed == EfficientWiFiP2pGroupsActivity.mMgmntPort) {
             whatHandle = MGMNT_SOCKET_HANDLE;
             whatRead = MGMNT_MESSAGE_READ;
-        } else if (port == EfficientWiFiP2pGroupsActivity.mDataPort) {
+        } else if (portUsed == EfficientWiFiP2pGroupsActivity.mDataPort) {
             whatHandle = DATA_SOCKET_HANDLE;
             whatRead = DATA_MESSAGE_READ;
-        } else if (port == EfficientWiFiP2pGroupsActivity.mProxyMgmntPort) {
+        } else if (portUsed == EfficientWiFiP2pGroupsActivity.mProxyMgmntPort) {
             whatHandle = PROXY_MGMNT_SOCKET_HANDLE;
             whatRead = PROXY_MGMNT_MESSAGE_READ;
-        } else if (port == EfficientWiFiP2pGroupsActivity.mProxyDataPort) {
+        } else if (portUsed == EfficientWiFiP2pGroupsActivity.mProxyDataPort) {
             whatHandle = PROXY_DATA_SOCKET_HANDLE;
             whatRead = PROXY_DATA_MESSAGE_READ;
         }
@@ -47,7 +45,7 @@ public class SocketManager implements Runnable, ProtocolConstants {
     public void run() {
         try {
 
-            iStream = socket.getInputStream();
+            InputStream iStream = socket.getInputStream();
             oStream = socket.getOutputStream();
             byte[] buffer = new byte[1024];
             int bytes;
@@ -73,7 +71,7 @@ public class SocketManager implements Runnable, ProtocolConstants {
                     bufferSocket.socketManager = this;
 
                     // Send the obtained bytes to the UI Activity
-                    Log.d(TAG, "Rec:" + String.valueOf(buffer));
+                    Log.d(TAG, "Rec:" + Arrays.toString(buffer));
                     handler.obtainMessage(whatRead, bytes, -1, bufferSocket).sendToTarget();
                 } catch (IOException e) {
                     //SocketPeer.peerDisconnected(pListner, port);
@@ -92,7 +90,7 @@ public class SocketManager implements Runnable, ProtocolConstants {
         }
     }
 
-    public void write(byte[] buffer) {
+    private void write(byte[] buffer) {
         try {
             //TODO Enable this
 /*
@@ -107,12 +105,12 @@ public class SocketManager implements Runnable, ProtocolConstants {
         }
     }
 
-    public void writeFormattedMessage(String dataToSend, MessageType messageType) {
+    void writeFormattedMessage(String dataToSend, MessageType messageType) {
         String formattedMsg = MessageHelper.getFormattedMessage(messageType, dataToSend);
         write(formattedMsg.getBytes());
     }
 
-    public Socket getSocket() {
+    Socket getSocket() {
         return socket;
     }
 }

@@ -7,9 +7,9 @@ import java.util.Locale;
 /**
  * Created by Ahmed on 4/9/2015.
  */
-public class LegacyGroupsInfo {
-    public List<SocketPeerNearbyLegacy> peerNearbyLegacies = new ArrayList<>();
-    public List<LegacyApsCoverage> legacyApsCoverages = new ArrayList<>();
+class LegacyGroupsInfo {
+    private List<SocketPeerNearbyLegacy> peerNearbyLegacies = new ArrayList<>();
+    List<LegacyApsCoverage> legacyApsCoverages = new ArrayList<>();
 
     public void add(SocketPeer socketPeer, String peerNearbyLegaciesString, String goDeviceId) {
         DiscoveryPeersInfo discoveryPeersInfo = new DiscoveryPeersInfo();
@@ -27,7 +27,7 @@ public class LegacyGroupsInfo {
         }
     }
 
-    public SocketPeerNearbyLegacy getSocketPeerNearbyLegacy(SocketPeer socketPeer) {
+    private SocketPeerNearbyLegacy getSocketPeerNearbyLegacy(SocketPeer socketPeer) {
         for (SocketPeerNearbyLegacy peerNearbyLegacy : peerNearbyLegacies) {
             if (peerNearbyLegacy.socketPeer == socketPeer)
                 return peerNearbyLegacy;
@@ -35,7 +35,7 @@ public class LegacyGroupsInfo {
         return null;
     }
 
-    public String calculateCoverage() {
+    String calculateCoverage() {
         String str = String.format(Locale.US, "%20s%20s\n", "SSID", "Assigned PM");
         str += String.format(Locale.US, "%40s\n", " ").replace(" ", "-");
 
@@ -56,7 +56,7 @@ public class LegacyGroupsInfo {
                     str += String.format(Locale.US
                             , "%20s%20s\n"
                             , legacyApsCoverage.legacyAp
-                            , legacyApsCoverage.proxyPeer.socketPeer.toString());
+                            , legacyApsCoverage.proxyPeer != null ? legacyApsCoverage.proxyPeer.socketPeer.toString() : null);
                 }
             }
         }
@@ -64,7 +64,7 @@ public class LegacyGroupsInfo {
         return str;
     }
 
-    public void buildLegacyApCoverage(List<String> legacyAps) {
+    private void buildLegacyApCoverage(List<String> legacyAps) {
         legacyApsCoverages = new ArrayList<>();
 
         for (String legacyAp : legacyAps) {
@@ -80,7 +80,7 @@ public class LegacyGroupsInfo {
         }
     }
 
-    public List<String> getLegacyApsList() {
+    List<String> getLegacyApsList() {
         List<String> legacyAps = new ArrayList<>();
         for (SocketPeerNearbyLegacy peerNearbyLegacy : peerNearbyLegacies)
             for (DiscoveryPeerInfo peerInfo : peerNearbyLegacy.discoveryPeersInfo.peersInfo)
@@ -89,24 +89,24 @@ public class LegacyGroupsInfo {
         return legacyAps;
     }
 
-    public void clear() {
+    void clear() {
         peerNearbyLegacies.clear();
         legacyApsCoverages.clear();
     }
 }
 
 class SocketPeerNearbyLegacy {
-    public SocketPeer socketPeer = null;
-    public DiscoveryPeersInfo discoveryPeersInfo = null;
+    SocketPeer socketPeer = null;
+    DiscoveryPeersInfo discoveryPeersInfo = null;
 }
 
 class LegacyApsCoverage {
-    public String legacyAp = null;
-    public List<SocketPeer> socketPeers = null;
-    public SocketPeerNearbyLegacy proxyPeer = null;
+    String legacyAp = null;
+    List<SocketPeer> socketPeers = null;
+    SocketPeerNearbyLegacy proxyPeer = null;
     public SocketPeerNearbyLegacy spareProxyPeer = null;
 
-    public boolean sendAssignmentForProxyPeer() {
+    boolean sendAssignmentForProxyPeer() {
         boolean done = false;
 
         if (legacyAp != null)

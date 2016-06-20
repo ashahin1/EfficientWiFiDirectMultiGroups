@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 /**
  * Created by eng_a on 3/30/2016.
  */
-public class Utilities {
+class Utilities {
     private static final String TAG = "Utilities";
 
     private static final Pattern IPV4_ADDR_PATTERN = Pattern.compile(
@@ -39,11 +39,11 @@ public class Utilities {
         return IPV4_ADDR_PATTERN.matcher(ip).matches();
     }
 
-    public static boolean isValidMacAddr(final String mac) {
+    static boolean isValidMacAddr(final String mac) {
         return MAC_ADDR_PATTERN.matcher(mac).matches();
     }
 
-    public static String getWifiDirectIPAddress() {
+    static String getWifiDirectIPAddress() {
         // Adapted from
         // http://stackoverflow.com/questions/6064510/how-to-get-ip-address-of-the-device/12449111#12449111
         try {
@@ -68,7 +68,7 @@ public class Utilities {
     }
 
 
-    public static byte[] getWifiMacAddressLeastByte() {
+    private static byte[] getWifiMacAddressLeastByte() {
         //adapted from http://robinhenniges.com/en/android6-get-mac-address-programmatically
         byte[] macBytes = null;
 
@@ -87,7 +87,7 @@ public class Utilities {
     }
 
     //Adapted from http://stackoverflow.com/questions/16730711/get-my-wifi-ip-address-android
-    public static String convertIntToIpAddress(int ipAddress) {
+    static String convertIntToIpAddress(int ipAddress) {
         // Convert little-endian to big-endianif needed
         if (ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN)) {
             ipAddress = Integer.reverseBytes(ipAddress);
@@ -106,7 +106,7 @@ public class Utilities {
         return ipAddressString;
     }
 
-    static public String generateProposedIP(int maxSubnetX, int maxSubnetY) {
+    static String generateProposedIP(int maxSubnetX, int maxSubnetY) {
         //Initialize the seed based on the least significant byte of the wifi mac address
         if (random == null) {
             byte[] macBytes = getWifiMacAddressLeastByte();
@@ -136,7 +136,7 @@ public class Utilities {
     }
 
     //Taken from -> https://code.google.com/p/android-wifi-connecter/
-    public static String convertToQuotedString(String string) {
+    static String convertToQuotedString(String string) {
         if (TextUtils.isEmpty(string)) {
             return "";
         }
@@ -149,7 +149,7 @@ public class Utilities {
         return "\"" + string + "\"";
     }
 
-    public static boolean writeStringToFile(String contents, String fileNameStart) {
+    static boolean writeStringToFile(String contents, String fileNameStart) {
         if (isExternalStorageWritable()) {
             Date dt = Calendar.getInstance().getTime();
             File pFile;
@@ -174,7 +174,7 @@ public class Utilities {
     }
 
     /* Checks if external storage is available for read and write */
-    public static boolean isExternalStorageWritable() {
+    private static boolean isExternalStorageWritable() {
         String state = Environment.getExternalStorageState();
         return Environment.MEDIA_MOUNTED.equals(state);
     }

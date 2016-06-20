@@ -3,7 +3,7 @@ package esnetlab.apps.android.wifidirect.efficientmultigroups;
 /**
  * Created by eng_a on 3/28/2016.
  */
-public interface ProtocolConstants {
+interface ProtocolConstants {
 
     String SERVICE_INSTANCE = "_wfd_emc";
     String SERVICE_REG_TYPE = "_emc._tcp";

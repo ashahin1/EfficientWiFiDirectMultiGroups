@@ -3,11 +3,11 @@ package esnetlab.apps.android.wifidirect.efficientmultigroups;
 /**
  * Created by Ahmed on 4/9/2015.
  */
-public class MessageHelper {
+class MessageHelper {
 
-    public static final String MESSAGE_TYPE_DATA_SEPARATOR = ">>>";
+    private static final String MESSAGE_TYPE_DATA_SEPARATOR = ">>>";
 
-    public static String getFormattedMessage(MessageType messageType, String message) {
+    static String getFormattedMessage(MessageType messageType, String message) {
         String formattedMessage;
 
         formattedMessage = messageType.toString();
@@ -17,7 +17,7 @@ public class MessageHelper {
         return formattedMessage;
     }
 
-    public static MessageTypeData getMessageTypeAndData(String message) {
+    static MessageTypeData getMessageTypeAndData(String message) {
         MessageTypeData messageTypeData = new MessageTypeData();
         String msgStrings[] = message.split(MESSAGE_TYPE_DATA_SEPARATOR);
         if (msgStrings.length == 2) {

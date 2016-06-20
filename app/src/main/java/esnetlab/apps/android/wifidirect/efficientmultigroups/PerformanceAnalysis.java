@@ -16,26 +16,26 @@ enum ProtocolTestMode {
     FULL_EMC_TEST
 }
 
-public class PerformanceAnalysis {
-    public final ArrayList<DiscoveryPeerStatistics> discoveryPeerStatisticsList = new ArrayList<>();
-    public final ArrayList<SocketPeerStatistics> socketPeerStatisticsList = new ArrayList<>();
+class PerformanceAnalysis {
+    private final ArrayList<DiscoveryPeerStatistics> discoveryPeerStatisticsList = new ArrayList<>();
+    private final ArrayList<SocketPeerStatistics> socketPeerStatisticsList = new ArrayList<>();
 
-    public int sentServiceDiscoveryRequestCount = 0;
-    public int sentManagementSocketMessagesCount = 0;
-    public int sentDataSocketMessagesCount = 0;
-    public int conflictIpCount = 0;
-    public int runNumber = 1;
-    public int beGoCount = 0;
-    public int beGmCount = 0;
-    public int bePmCount = 0;
+    int sentServiceDiscoveryRequestCount = 0;
+    int sentManagementSocketMessagesCount = 0;
+    int sentDataSocketMessagesCount = 0;
+    int conflictIpCount = 0;
+    int runNumber = 1;
+    int beGoCount = 0;
+    int beGmCount = 0;
+    int bePmCount = 0;
 
-    public int noOfDevices = -1;
-    public long startTime = -1;
-    public long timeDiff = -1;
+    int noOfDevices = -1;
+    long startTime = -1;
+    private long timeDiff = -1;
     private final HashSet<String> macAddressList = new HashSet<>();
 
     //TODO: Add proxy mgmnt/data stats
-    public void addDiscoveryStatistic(String discoveryPeerMacAddr, int length, boolean deviceInfo) {
+    void addDiscoveryStatistic(String discoveryPeerMacAddr, int length, boolean deviceInfo) {
         DiscoveryPeerStatistics peerStatistics = getDiscoveryPeerStats(discoveryPeerMacAddr);
 
         if (peerStatistics != null) {
@@ -54,7 +54,7 @@ public class PerformanceAnalysis {
         }
     }
 
-    public DiscoveryPeerStatistics getDiscoveryPeerStats(String peerMacAddr) {
+    private DiscoveryPeerStatistics getDiscoveryPeerStats(String peerMacAddr) {
         DiscoveryPeerStatistics stat = null;
 
         if (peerMacAddr != null)
@@ -70,7 +70,7 @@ public class PerformanceAnalysis {
         return stat;
     }
 
-    public void addSocketStatistic(String socketPeerMacAddr, String socketPeerIpAddr, int length, boolean management) {
+    void addSocketStatistic(String socketPeerMacAddr, String socketPeerIpAddr, int length, boolean management) {
         SocketPeerStatistics peerStatistics = getSocketPeerStats(socketPeerIpAddr);
 
         if (peerStatistics != null) {
@@ -94,7 +94,7 @@ public class PerformanceAnalysis {
         }
     }
 
-    public SocketPeerStatistics getSocketPeerStats(String peerAddr) {
+    private SocketPeerStatistics getSocketPeerStats(String peerAddr) {
         SocketPeerStatistics stat = null;
 
         if (peerAddr != null)
@@ -110,7 +110,7 @@ public class PerformanceAnalysis {
         return stat;
     }
 
-    public String getStatistics(String thisDeviceMAC) {
+    String getStatistics(String thisDeviceMAC) {
         String str = "";
         String pStr = "";
 
@@ -195,7 +195,7 @@ public class PerformanceAnalysis {
         return str;
     }
 
-    public float getTotalDiscoveryBandwidth() {
+    private float getTotalDiscoveryBandwidth() {
         float bw = 0;
 
         for (DiscoveryPeerStatistics peerStatistics:
@@ -206,7 +206,7 @@ public class PerformanceAnalysis {
         return bw;
     }
 
-    public void reset() {
+    void reset() {
         sentServiceDiscoveryRequestCount = 0;
         sentManagementSocketMessagesCount = 0;
         sentDataSocketMessagesCount = 0;
@@ -229,12 +229,12 @@ public class PerformanceAnalysis {
 }
 
 class DiscoveryPeerStatistics {
-    public final MessageCounter deviceInfoMessageCounter = new MessageCounter();
-    public final MessageCounter legacyApMessageCounter = new MessageCounter();
+    final MessageCounter deviceInfoMessageCounter = new MessageCounter();
+    final MessageCounter legacyApMessageCounter = new MessageCounter();
     //public DiscoveryPeerInfo discoveryPeerInfo = null;
-    public String discoveryPeerMacAddr = null;
+    String discoveryPeerMacAddr = null;
 
-    public String getStatistics() {
+    String getStatistics() {
         String str = "";
 
         str += String.format(Locale.US, "*******Discovery Stats for Device [%s]*******\n", discoveryPeerMacAddr);
@@ -246,13 +246,13 @@ class DiscoveryPeerStatistics {
 }
 
 class SocketPeerStatistics {
-    public final MessageCounter managementSocketMessageCounter = new MessageCounter();
-    public final MessageCounter dataSocketMessageCounter = new MessageCounter();
+    final MessageCounter managementSocketMessageCounter = new MessageCounter();
+    final MessageCounter dataSocketMessageCounter = new MessageCounter();
     //public SocketPeer socketPeer = null;
-    public String socketPeerIpAddr = null;
-    public String socketPeerMacAddr = null;
+    String socketPeerIpAddr = null;
+    String socketPeerMacAddr = null;
 
-    public String getStatistics() {
+    String getStatistics() {
 
         String str = "";
         str += String.format(Locale.US, "*******Socket Stats for Device [%s,%s]*******\n", socketPeerMacAddr, socketPeerIpAddr);
@@ -267,7 +267,7 @@ class MessageCounter {
     private final HashMap<Integer, Integer> lengthCounter = new HashMap<>();
     private long startTime = 0;
 
-    public void addLength(int length) {
+    void addLength(int length) {
         if (lengthCounter.size() == 0)
             setStartTime();
 
@@ -279,7 +279,7 @@ class MessageCounter {
         }
     }
 
-    public long getTotalLength() {
+    private long getTotalLength() {
         long totalLength = 0;
 
         for (int keyLength :
@@ -290,7 +290,7 @@ class MessageCounter {
         return totalLength;
     }
 
-    public int getTotalNumberOfMessages() {
+    int getTotalNumberOfMessages() {
         int num = 0;
 
         for (int keyLength :
@@ -301,18 +301,16 @@ class MessageCounter {
         return num;
     }
 
-    public void setStartTime() {
+    private void setStartTime() {
         startTime = System.currentTimeMillis();
     }
 
 
-    public float getBandwidth() {
+    float getBandwidth() {
         long curTime = System.currentTimeMillis();
         long timeDiff = curTime - startTime;
 
-        float bw = (getTotalLength() * 1000.0f) / (timeDiff * 1.0f);
-
-        return bw;
+        return (getTotalLength() * 1000.0f) / (timeDiff * 1.0f);
     }
 
     public void reset() {

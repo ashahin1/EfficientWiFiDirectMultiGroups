@@ -10,11 +10,11 @@ import java.util.Map;
 /**
  * Created by Ahmed on 4/7/2015.
  */
-public class DiscoveryPeersInfo implements ProtocolConstants {
-    public final List<DiscoveryPeerInfo> peersInfo = new ArrayList<>();
-    public final List<WifiP2pDevice> devices = new ArrayList<>();
-    public DiscoveryPeerInfo selectedGoPeer = null;
-    public DiscoveryPeerInfo spareGoPeer = null;
+class DiscoveryPeersInfo implements ProtocolConstants {
+    final List<DiscoveryPeerInfo> peersInfo = new ArrayList<>();
+    final List<WifiP2pDevice> devices = new ArrayList<>();
+    private DiscoveryPeerInfo selectedGoPeer = null;
+    private DiscoveryPeerInfo spareGoPeer = null;
 
     public void add(DiscoveryPeerInfo discoveryPeerInfo) {
         peersInfo.add(discoveryPeerInfo);
@@ -24,7 +24,7 @@ public class DiscoveryPeersInfo implements ProtocolConstants {
         addOrUpdate(discoveryPeersInfoString, "");
     }
 
-    public void addOrUpdate(String discoveryPeersInfoString, String ignoreDeviceId) {
+    void addOrUpdate(String discoveryPeersInfoString, String ignoreDeviceId) {
         String dpiStrings[] = discoveryPeersInfoString.split(";");
         for (String dpiString : dpiStrings) {
             DiscoveryPeerInfo peerInfo = DiscoveryPeerInfo.convertStringToPeerInfo(dpiString);
@@ -38,7 +38,7 @@ public class DiscoveryPeersInfo implements ProtocolConstants {
         }
     }
 
-    public boolean addOrUpdate(String deviceId, Map<String, String> record) {
+    boolean addOrUpdate(String deviceId, Map<String, String> record) {
         boolean cond1 = false;
         boolean cond2 = false;
         DiscoveryPeerInfo peerInfo = getPeerInfo(deviceId);
@@ -79,32 +79,30 @@ public class DiscoveryPeersInfo implements ProtocolConstants {
         return cond1 & cond2;
     }
 
-    public void addDevice(WifiP2pDevice p2pDevice) {
+    void addDevice(WifiP2pDevice p2pDevice) {
         WifiP2pDevice device = getDeviceByMacAddress(p2pDevice.deviceAddress);
         if (device != null)
             devices.remove(device);
         devices.add(p2pDevice);
     }
 
-    public WifiP2pDevice getDeviceByMacAddress(String deviceAddress) {
+    private WifiP2pDevice getDeviceByMacAddress(String deviceAddress) {
         for (WifiP2pDevice device : devices)
             if (device.deviceAddress.equalsIgnoreCase(deviceAddress))
                 return device;
         return null;
     }
 
-    public WifiP2pDevice getSelectedGoDevice() {
+    WifiP2pDevice getSelectedGoDevice() {
         if (selectedGoPeer != null) {
-            WifiP2pDevice device = getDeviceByMacAddress(selectedGoPeer.deviceId);
-            return device;
+            return getDeviceByMacAddress(selectedGoPeer.deviceId);
         }
         return null;
     }
 
     public WifiP2pDevice getSpareGoDevice() {
         if (spareGoPeer != null) {
-            WifiP2pDevice device = getDeviceByMacAddress(spareGoPeer.deviceId);
-            return device;
+            return getDeviceByMacAddress(spareGoPeer.deviceId);
         }
         return null;
     }
@@ -113,11 +111,11 @@ public class DiscoveryPeersInfo implements ProtocolConstants {
         peersInfo.remove(discoveryPeerInfo);
     }
 
-    public void clear() {
+    void clear() {
         peersInfo.clear();
     }
 
-    public DiscoveryPeerInfo getPeerInfo(String deviceId) {
+    DiscoveryPeerInfo getPeerInfo(String deviceId) {
         for (DiscoveryPeerInfo discoveryPeerInfo : peersInfo) {
             if (discoveryPeerInfo.deviceId.equals(deviceId)) {
                 return discoveryPeerInfo;
@@ -126,7 +124,7 @@ public class DiscoveryPeersInfo implements ProtocolConstants {
         return null;
     }
 
-    public String getPeerLegacyInfoStr(String deviceId) {
+    String getPeerLegacyInfoStr(String deviceId) {
         String str = null;
         DiscoveryPeerInfo pInfo = getPeerInfo(deviceId);
 
@@ -144,7 +142,7 @@ public class DiscoveryPeersInfo implements ProtocolConstants {
      * For a group member, ths function sets the value of the GO and SpareGo
      * That the GM should connect to.
      */
-    public String decideGoAndSpareToConnect() {
+    String decideGoAndSpareToConnect() {
         String rankStr = "";
         float firstRank = -1.0f;
         float secondRank = -1.0f;
@@ -190,7 +188,7 @@ public class DiscoveryPeersInfo implements ProtocolConstants {
      *
      * @return true if me is the best
      */
-    public String getBestGoIsMe(Context context) {
+    String getBestGoIsMe(Context context) {
         String rankStr = "";
         boolean meIsBest = false;
         BatteryInformation batteryInfo = new BatteryInformation();
@@ -222,14 +220,14 @@ public class DiscoveryPeersInfo implements ProtocolConstants {
         return meIsBest ? "YES\n" + rankStr : rankStr;
     }
 
-    public boolean isMyProposedIpConflicting(String proposedIp, String conflictedIpsString) {
+    boolean isMyProposedIpConflicting(String proposedIp, String conflictedIpsString) {
         boolean conflict = false;
 
         if (!conflictedIpsString.isEmpty()) {
             //Try to check if my proposed IP is in the conflict list sent by any of the other neighbors
             String[] ipStr = conflictedIpsString.split(",");
-            for (int i = 0; i < ipStr.length; i++) {
-                if (ipStr[i].equals(proposedIp)) {
+            for (String anIpStr : ipStr) {
+                if (anIpStr.equals(proposedIp)) {
                     return true;
                 }
             }
@@ -254,7 +252,7 @@ public class DiscoveryPeersInfo implements ProtocolConstants {
      *
      * @return Comma concatenated string of the conflicted IPs
      */
-    public String getConflictedPeerIPs() {
+    String getConflictedPeerIPs() {
         String cStr = "";
         for (int i = 0; i < peersInfo.size() - 1; i++)
             for (int j = i + 1; j < peersInfo.size(); j++) {
@@ -265,7 +263,7 @@ public class DiscoveryPeersInfo implements ProtocolConstants {
         return cStr;
     }
 
-    public String extractConflictedIpsFromPeer(String receivedString) {
+    String extractConflictedIpsFromPeer(String receivedString) {
         String result = "";
 
         String[] str = receivedString.split(",");
@@ -276,12 +274,12 @@ public class DiscoveryPeersInfo implements ProtocolConstants {
         return result;
     }
 
-    public String extractIpFromPeer(String receivedString) {
+    private String extractIpFromPeer(String receivedString) {
         String[] str = receivedString.split(",");
         return str[0];
     }
 
-    public String getConflictFreeIP(int maxSubnetX, int maxSubnetY) {
+    String getConflictFreeIP(int maxSubnetX, int maxSubnetY) {
         String pIP = Utilities.generateProposedIP(maxSubnetX, maxSubnetY);
 
         while (isMyProposedIpConflicting(pIP, "")) {
@@ -291,7 +289,7 @@ public class DiscoveryPeersInfo implements ProtocolConstants {
         return pIP;
     }
 
-    public String toStringGoOnly() {
+    String toStringGoOnly() {
         String str = "";
         for (DiscoveryPeerInfo discoveryPeerInfo : peersInfo) {
             if (discoveryPeerInfo.getIsGO())

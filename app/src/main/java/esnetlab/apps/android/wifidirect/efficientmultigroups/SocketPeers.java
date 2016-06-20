@@ -9,21 +9,21 @@ import java.util.Random;
 /**
  * Created by Ahmed on 4/8/2015.
  */
-public class SocketPeers {
+class SocketPeers {
 
-    public static final String TAG = "SocketPeers";
+    private static final String TAG = "SocketPeers";
     private List<SocketPeer> socketPeerList;
 
-    public SocketPeers() {
-        socketPeerList = new ArrayList<SocketPeer>();
+    SocketPeers() {
+        socketPeerList = new ArrayList<>();
     }
 
-    public void clear() {
+    void clear() {
         removeAllSocketManagers();
         socketPeerList.clear();
     }
 
-    public void addPeer(SocketPeer socketPeer) {
+    private void addPeer(SocketPeer socketPeer) {
         socketPeerList.add(socketPeer);
     }
 
@@ -32,7 +32,7 @@ public class SocketPeers {
         socketPeerList.add(socketPeer);
     }
 
-    public SocketPeer addOrUpdatePeer(String peerStr) {
+    SocketPeer addOrUpdatePeer(String peerStr) {
         String pInfo[] = peerStr.split(",");
         String peerName = pInfo[0];
         String peerMacAddress = pInfo[1];
@@ -60,7 +60,7 @@ public class SocketPeers {
         }
     }
 
-    public SocketPeer getPeerByMacAddress(String macAddress) {
+    private SocketPeer getPeerByMacAddress(String macAddress) {
         for (SocketPeer socketPeer : socketPeerList)
             if (socketPeer.deviceAddress.equalsIgnoreCase(macAddress))
                 return socketPeer;
@@ -75,20 +75,20 @@ public class SocketPeers {
         }
     }
 
-    public SocketPeer getPeerByIpAddress(String ipAddress) {
+    private SocketPeer getPeerByIpAddress(String ipAddress) {
         for (SocketPeer socketPeer : socketPeerList)
             if (socketPeer.ipAddress.equalsIgnoreCase(ipAddress))
                 return socketPeer;
         return null;
     }
 
-    public void decreasePeersTTL() {
+    void decreasePeersTTL() {
         for (SocketPeer socketPeer : socketPeerList) {
             socketPeer.decreaseTTL();
         }
     }
 
-    public void prunePeers() {
+    void prunePeers() {
         for (int i = socketPeerList.size() - 1; i >= 0; i--) {
             if (socketPeerList.get(i).getTTL() <= 0) {
                 //The peer should be disconnected as we didn't hear any heart beat from a long time.
@@ -99,7 +99,7 @@ public class SocketPeers {
         }
     }
 
-    public void removeDuplicatedDataSocketManagers() {
+    void removeDuplicatedDataSocketManagers() {
         String ip0, ip1, ip2;
         String ip0s[], ip1s[];
         int octet0, octet1;
@@ -135,17 +135,17 @@ public class SocketPeers {
         socketPeer.removeSocketManagers();
     }*/
 
-    public void removeAllSocketManagers() {
+    void removeAllSocketManagers() {
         for (SocketPeer socketPeer : socketPeerList)
             socketPeer.removeSocketManagers();
     }
 
-    public List<SocketPeer> getPeers() {
+    List<SocketPeer> getPeers() {
         return socketPeerList;
     }
 
     public List<SocketPeer> getConnectedPeers() {
-        List<SocketPeer> cSocketPeers = new ArrayList<SocketPeer>();
+        List<SocketPeer> cSocketPeers = new ArrayList<>();
         for (SocketPeer socketPeer : socketPeerList) {
             if (EfficientWiFiP2pGroupsActivity.p2pDevice != null)
                 if (!socketPeer.deviceAddress.equalsIgnoreCase(EfficientWiFiP2pGroupsActivity.p2pDevice.deviceAddress))
@@ -156,7 +156,7 @@ public class SocketPeers {
     }
 
     public List<SocketPeer> getNotConnectedPeers() {
-        List<SocketPeer> ncSocketPeers = new ArrayList<SocketPeer>();
+        List<SocketPeer> ncSocketPeers = new ArrayList<>();
         for (SocketPeer socketPeer : socketPeerList) {
             if (EfficientWiFiP2pGroupsActivity.p2pDevice != null)
                 if (!socketPeer.deviceAddress.equalsIgnoreCase(EfficientWiFiP2pGroupsActivity.p2pDevice.deviceAddress))
@@ -169,7 +169,7 @@ public class SocketPeers {
     /**
      * Iterate through all nearby peers and connect to any unconnected one.
      */
-    public void connectToAllPeersDataPorts(MessageTarget mTarget) {
+    void connectToAllPeersDataPorts(MessageTarget mTarget) {
         for (SocketPeer socketPeer : socketPeerList) {
             //sleep for a random time to avoid attempting to connect with the socketPeer at the same time it is trying to connect to this device.
             try {
@@ -197,21 +197,21 @@ public class SocketPeers {
         return str;
     }
 
-    public String getPeerNameFromSocketManager(SocketManager socketManager) {
+    String getPeerNameFromSocketManager(SocketManager socketManager) {
         SocketPeer socketPeer = getPeerFromSocketManager(socketManager);
         if (socketPeer != null)
             return socketPeer.name;
         return "";
     }
 
-    public SocketPeer getPeerFromSocketManager(SocketManager socketManager) {
+    SocketPeer getPeerFromSocketManager(SocketManager socketManager) {
         for (SocketPeer socketPeer : socketPeerList)
             if (socketPeer.ipAddress.equalsIgnoreCase(socketManager.getSocket().getInetAddress().getHostAddress()))
                 return socketPeer;
         return null;
     }
 
-    public void addDataSocketManagerToPeer(SocketManager socketManager) {
+    void addDataSocketManagerToPeer(SocketManager socketManager) {
         SocketPeer socketPeer = getPeerFromSocketManager(socketManager);
         if (socketPeer != null)
             socketPeer.dataSocketManager = socketManager;
@@ -221,7 +221,7 @@ public class SocketPeers {
         addManagementSocketManagerToPeer(socketManager, false);
     }
 
-    public void addManagementSocketManagerToPeer(SocketManager socketManager, boolean isGo) {
+    void addManagementSocketManagerToPeer(SocketManager socketManager, boolean isGo) {
         SocketPeer socketPeer = getPeerFromSocketManager(socketManager);
         if (socketPeer != null)
             socketPeer.managementSocketManager = socketManager;
@@ -250,7 +250,7 @@ public class SocketPeers {
             socketPeer.proxyManagementSocketManager = socketManager;
     }
 
-    public List<SocketManager> getOpenManagementSockets() {
+    List<SocketManager> getOpenManagementSockets() {
         List<SocketManager> socketManagerList = new ArrayList<>();
 
         for (SocketPeer peer : socketPeerList) {
@@ -261,7 +261,7 @@ public class SocketPeers {
         return socketManagerList;
     }
 
-    public List<SocketManager> getOpenDataSockets() {
+    private List<SocketManager> getOpenDataSockets() {
         List<SocketManager> socketManagerList = new ArrayList<>();
 
         for (SocketPeer peer : socketPeerList) {
@@ -272,7 +272,7 @@ public class SocketPeers {
         return socketManagerList;
     }
 
-    public List<SocketManager> getOpenProxyManagementSockets() {
+    private List<SocketManager> getOpenProxyManagementSockets() {
         List<SocketManager> socketManagerList = new ArrayList<>();
 
         for (SocketPeer peer : socketPeerList) {
@@ -283,7 +283,7 @@ public class SocketPeers {
         return socketManagerList;
     }
 
-    public List<SocketManager> getOpenProxyDataSockets() {
+    private List<SocketManager> getOpenProxyDataSockets() {
         List<SocketManager> socketManagerList = new ArrayList<>();
 
         for (SocketPeer peer : socketPeerList) {
@@ -294,7 +294,7 @@ public class SocketPeers {
         return socketManagerList;
     }
 
-    public int sendToAllDataSockets(String dataToSend, MessageType messageType) {
+    int sendToAllDataSockets(String dataToSend, MessageType messageType) {
         int smCount = 0;
         for (SocketManager socketManager : getOpenDataSockets()) {
             socketManager.writeFormattedMessage(dataToSend, messageType);
@@ -303,7 +303,7 @@ public class SocketPeers {
         return smCount;
     }
 
-    public int sendToAllManagmentSockets(String dataToSend, MessageType messageType) {
+    int sendToAllManagmentSockets(String dataToSend, MessageType messageType) {
         int smCount = 0;
         for (SocketManager socketManager : getOpenManagementSockets()) {
             socketManager.writeFormattedMessage(dataToSend, messageType);

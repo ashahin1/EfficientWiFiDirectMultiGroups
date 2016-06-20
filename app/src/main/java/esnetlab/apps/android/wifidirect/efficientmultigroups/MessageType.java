@@ -1,6 +1,6 @@
 package esnetlab.apps.android.wifidirect.efficientmultigroups;
 
-public enum MessageType {
+enum MessageType {
     MGMNT_KEEP_ALIVE,
     MGMNT_GM_TO_GO_FOUND_LEGACY_AP,
     MGMNT_GO_TO_GM_SELECTED_LEGACY,

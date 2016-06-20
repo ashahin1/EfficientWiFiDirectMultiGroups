@@ -8,14 +8,12 @@ import android.os.BatteryManager;
 /**
  * Created by Ahmed on 3/26/2015.
  */
-public class BatteryInformation {
-    public boolean isCharging = false;
-    public int level = 0;
-    public int scale = 0;
-    public float percent = 0.0f;
-    public int capacity = 0;
+class BatteryInformation {
+    boolean isCharging = false;
+    int level = 0;
+    int capacity = 0;
 
-    public BatteryInformation getBatteryStats(Context context) {
+    BatteryInformation getBatteryStats(Context context) {
         if (context != null) {
             IntentFilter iFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
             Intent batteryStatus = context.registerReceiver(null, iFilter);
@@ -25,8 +23,8 @@ public class BatteryInformation {
                 isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
                         status == BatteryManager.BATTERY_STATUS_FULL;
                 level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-                scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-                percent = level / (float) scale;
+                //int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+                //float percent = level / (float) scale;
                 capacity = getBatteryCapacity(context).intValue();
                 return this;
             }
@@ -35,7 +33,7 @@ public class BatteryInformation {
     }
 
     //Taken from http://stackoverflow.com/questions/22285179/query-for-battery-capacity
-    public Double getBatteryCapacity(Context context) {
+    private Double getBatteryCapacity(Context context) {
         // Power profile class instance
         Object mPowerProfile_ = null;
         // Reset variable for battery capacity

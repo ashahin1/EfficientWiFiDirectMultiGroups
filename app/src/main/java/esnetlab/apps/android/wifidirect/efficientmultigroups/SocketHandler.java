@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
  * The implementation of a ServerSocket handler. This is used by the wifi p2p
  * members including the group owner.
  */
-public class SocketHandler extends Thread {
+class SocketHandler extends Thread {
 
     private static final String TAG = "SocketHandler";
     private final int THREAD_COUNT = 10;
@@ -23,12 +23,12 @@ public class SocketHandler extends Thread {
      */
     private final ThreadPoolExecutor pool = new ThreadPoolExecutor(
             THREAD_COUNT, THREAD_COUNT, 10, TimeUnit.SECONDS,
-            new LinkedBlockingQueue<Runnable>());
+            new LinkedBlockingQueue<>());
     private ServerSocket socket = null;
     private Handler handler;
     private int portNo;
 
-    public SocketHandler(Handler handler, int portNo) throws IOException {
+    SocketHandler(Handler handler, int portNo) throws IOException {
         try {
             this.handler = handler;
             this.portNo = portNo;
@@ -56,7 +56,7 @@ public class SocketHandler extends Thread {
                 try {
                     if (socket != null && !socket.isClosed())
                         socket.close();
-                } catch (IOException ioe) {
+                } catch (IOException ignored) {
 
                 }
                 e.printStackTrace();
@@ -66,7 +66,7 @@ public class SocketHandler extends Thread {
         }
     }
 
-    public void closeServerSocket() {
+    void closeServerSocket() {
         if (socket != null)
             try {
                 socket.close();

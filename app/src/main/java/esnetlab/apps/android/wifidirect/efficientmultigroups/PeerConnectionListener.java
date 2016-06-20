@@ -3,7 +3,7 @@ package esnetlab.apps.android.wifidirect.efficientmultigroups;
 /**
  * Created by Ahmed on 4/8/2015.
  */
-public interface PeerConnectionListener {
+interface PeerConnectionListener {
 
     void onPeerDataConnected();
 

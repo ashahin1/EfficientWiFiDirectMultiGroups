@@ -8,24 +8,24 @@ import java.util.Random;
 /**
  * Created by Ahmed on 4/7/2015.
  */
-public class DiscoveryPeerInfo {
-    public static final String DEVICE_ID = "DeviceId";
-    public static final String BATTERY_LEVEL = "BatteryLevel";
-    public static final String BATTERY_CAPACITY = "BatteryCapacity";
-    public static final String LEGACY_SSID = "LegacySSID";
-    public static final String LEGACY_KEY = "LegacyKey";
-    public static final String BATTERY_IS_CHARGING = "BatteryIsCharging";
-    public static final String PROPOSED_IP = "ProposedIP";
-    public static final String NUM_OF_MEMBERS = "NumOfMembers";
+class DiscoveryPeerInfo {
+    private static final String DEVICE_ID = "DeviceId";
+    private static final String BATTERY_LEVEL = "BatteryLevel";
+    private static final String BATTERY_CAPACITY = "BatteryCapacity";
+    private static final String LEGACY_SSID = "LegacySSID";
+    private static final String LEGACY_KEY = "LegacyKey";
+    private static final String BATTERY_IS_CHARGING = "BatteryIsCharging";
+    private static final String PROPOSED_IP = "ProposedIP";
+    private static final String NUM_OF_MEMBERS = "NumOfMembers";
 
-    public String deviceId;
-    public int batteryLevel;
-    public int batteryCapacity;
-    public boolean batteryIsCharging;
-    public String legacySSID;
-    public String legacyKey;
-    public String proposedIP; //The third octet of the IP
-    public int numOfMembers;
+    String deviceId;
+    int batteryLevel;
+    int batteryCapacity;
+    boolean batteryIsCharging;
+    String legacySSID;
+    String legacyKey;
+    String proposedIP; //The third octet of the IP
+    int numOfMembers;
 
     DiscoveryPeerInfo() {
         updatePeerInfo("", -1, -1, false, "", "", "", 0);
@@ -43,7 +43,7 @@ public class DiscoveryPeerInfo {
         updatePeerInfo(deviceId, batteryLevel, batteryCapacity, batteryIsCharging, proposedIP, legacySSID, legacyKey, numOfMembers);
     }
 
-    public static DiscoveryPeerInfo convertStringToPeerInfo(String peerInfoStr) {
+    static DiscoveryPeerInfo convertStringToPeerInfo(String peerInfoStr) {
         DiscoveryPeerInfo discoveryPeerInfo = new DiscoveryPeerInfo();
         String splitArr1[] = peerInfoStr.split(",");
         if (splitArr1.length == 8) {
@@ -85,7 +85,7 @@ public class DiscoveryPeerInfo {
         return discoveryPeerInfo;
     }
 
-    public void updatePeerInfo(String deviceId, int batteryLevel, int batteryCapacity, boolean batteryIsCharging, String proposedIP, String legacySSID, String legacyKey, int numOfMembers) {
+    void updatePeerInfo(String deviceId, int batteryLevel, int batteryCapacity, boolean batteryIsCharging, String proposedIP, String legacySSID, String legacyKey, int numOfMembers) {
         this.deviceId = deviceId;
         this.batteryCapacity = batteryCapacity;
         this.batteryLevel = batteryLevel;
@@ -108,24 +108,24 @@ public class DiscoveryPeerInfo {
                 , discoveryPeerInfo.numOfMembers);
     }
 
-    public boolean deviceInfoAreEqual(int batteryLevel, int batteryCapacity, boolean batteryIsCharging, String proposedIP) {
+    boolean deviceInfoAreEqual(int batteryLevel, int batteryCapacity, boolean batteryIsCharging, String proposedIP) {
         return ((this.batteryLevel == batteryLevel)
                 && (this.batteryCapacity == batteryCapacity)
                 && (this.batteryIsCharging == batteryIsCharging)
-                && (this.proposedIP.equals(proposedIP)));
+                && (proposedIP.equals(this.proposedIP)));
     }
 
-    public boolean legacyApInfoAreEqual(String legacySSID, String legacyKey, int numOfMembers) {
+    boolean legacyApInfoAreEqual(String legacySSID, String legacyKey, int numOfMembers) {
         return ((this.legacySSID.equals(legacySSID))
                 && (this.legacyKey.equals(legacyKey))
                 && (this.numOfMembers == numOfMembers));
     }
 
-    public Boolean getIsGO() {
+    Boolean getIsGO() {
         return !(legacySSID.equals("") || legacyKey.equals(""));
     }
 
-    public float getCalculatedRank() {
+    float getCalculatedRank() {
         //Charging -> mRankAlpha
         //Level -> mRankBeta
         //Capacity -> mRankGamma

@@ -15,10 +15,10 @@ import javax.crypto.spec.SecretKeySpec;
  *         https://github.com/dirong/android-turbo/blob/411c446ec8f9ba3ffe4219f1bc4bd9b6a1abd0da/android-turbo/src/net/dirong/turbo/util/SecurityHelper.java
  */
 
-public class SecurityHelper {
+class SecurityHelper {
 
     /* Security */
-    private static final int BASE64_FLAGS = Base64.DEFAULT | Base64.NO_WRAP;
+    private static final int BASE64_FLAGS = Base64.NO_WRAP;
     private static final String seedKey = "tworock";
     private static final String TAG = null;
 
@@ -28,11 +28,10 @@ public class SecurityHelper {
         sr.setSeed(seed);
         kgen.init(128, sr); // 192 and 256 bits may not be available
         SecretKey skey = kgen.generateKey();
-        byte[] raw = skey.getEncoded();
-        return raw;
+        return skey.getEncoded();
     }
 
-    public static String encodeString(String str) {
+    static String encodeString(String str) {
         if (str == null)
             return null;
 
@@ -50,7 +49,7 @@ public class SecurityHelper {
         return Base64.encodeToString(result, BASE64_FLAGS);
     }
 
-    public static String decodeString(String encrypted) {
+    static String decodeString(String encrypted) {
         String result = null;
         try {
             SecretKeySpec skeySpec = new SecretKeySpec(EfficientWiFiP2pGroupsActivity.PASSWORD.getBytes()/*getRawKey(seedKey.getBytes())*/, "AES");
